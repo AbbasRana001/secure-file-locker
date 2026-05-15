@@ -4,515 +4,387 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Secure File Locker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/1.119.0/iconfont/tabler-icons.min.css" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #f8f9fb;
-      --surface: #ffffff;
-      --surface2: #f1f3f7;
-      --border: #e2e6ef;
-      --border-mid: #c8cdd9;
-      --text: #1a1d27;
-      --text-muted: #6b7280;
-      --text-hint: #9ca3af;
-      --accent: #3b5bdb;
-      --accent-light: #e8edfb;
-      --accent-dark: #2f49b8;
-      --success-bg: #eaf3de;
-      --success-text: #3b6d11;
-      --radius-sm: 8px;
-      --radius-md: 12px;
-      --radius-lg: 16px;
+      --bg:         #f0efe9;
+      --surface:    #faf9f7;
+      --surface2:   #f5f4f0;
+      --hover:      #eeede8;
+      --border:     #e0dfd8;
+      --border-mid: #bbb9b3;
+      --text:       #1c1b19;
+      --muted:      #888580;
+      --hint:       #aaa8a2;
+      --ink:        #1c1b19;
+      --ink-inv:    #f0efe9;
+      --green-bg:   #dcfce7;
+      --green-txt:  #166534;
+      --purple-bg:  #e8e6ff;
+      --purple-txt: #4338ca;
       --mono: 'Courier New', Courier, monospace;
     }
 
     body {
       background: var(--bg);
       color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       font-size: 15px;
       line-height: 1.6;
       min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* ── Layout ── */
-    .page { max-width: 680px; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
+    .shell {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 52px 20px 100px;
+    }
 
-    /* ── Header ── */
-    .header { margin-bottom: 2rem; }
-    .header-row { display: flex; align-items: center; gap: 12px; margin-bottom: 2px; }
-    .logo { width: 40px; height: 40px; background: var(--accent-light); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .logo i { font-size: 22px; color: var(--accent); }
-    h1 { font-size: 21px; font-weight: 600; color: var(--text); }
-    .tagline { font-size: 13px; color: var(--text-muted); margin-left: 52px; }
+    /* Wordmark */
+    .wordmark { display: flex; align-items: center; gap: 10px; margin-bottom: 48px; }
+    .wm-icon {
+      width: 34px; height: 34px;
+      background: var(--ink); border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .wm-icon i { font-size: 17px; color: var(--ink-inv); }
+    .wm-text { font-size: 15px; font-weight: 600; letter-spacing: -0.02em; color: var(--text); }
 
-    /* ── Cards ── */
-    .card {
+    /* Panel */
+    .panel {
+      width: 100%; max-width: 520px;
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 1.25rem 1.5rem;
-      margin-bottom: 1rem;
+      border-radius: 20px;
+      overflow: hidden;
     }
-    .section-label {
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.07em;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      margin-bottom: 12px;
-    }
-    .divider { height: 1px; background: var(--border); margin: 1rem 0; }
+    .panel-header { padding: 28px 32px 24px; border-bottom: 1px solid var(--border); }
+    .panel-title { font-size: 22px; font-weight: 600; letter-spacing: -0.04em; color: var(--text); margin-bottom: 4px; }
+    .panel-sub { font-size: 13px; color: var(--muted); }
+    .panel-body { padding: 28px 32px; display: flex; flex-direction: column; gap: 22px; }
 
-    /* ── File drop zone ── */
+    /* Field group */
+    .fg { display: flex; flex-direction: column; gap: 7px; }
+    .fl { font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em; color: var(--hint); text-transform: uppercase; }
+
+    /* Drop zone */
     .drop-zone {
-      position: relative;
-      border: 1.5px dashed var(--border-mid);
-      border-radius: var(--radius-md);
-      padding: 1.5rem;
-      text-align: center;
-      cursor: pointer;
+      position: relative; border: 1.5px dashed var(--border);
+      border-radius: 14px; padding: 22px 16px;
+      text-align: center; cursor: pointer; background: var(--surface2);
       transition: background 0.15s, border-color 0.15s;
     }
-    .drop-zone:hover { background: var(--surface2); border-color: var(--accent); }
-    .drop-zone.has-file { border-style: solid; border-color: #3b5bdb66; background: var(--accent-light); }
-    .drop-zone input[type="file"] {
-      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
-    }
-    .drop-zone i { font-size: 30px; color: var(--text-hint); margin-bottom: 8px; display: block; }
-    .drop-zone.has-file i { color: var(--accent); }
-    .drop-main { font-size: 14px; color: var(--text-muted); }
-    .drop-zone.has-file .drop-main { font-weight: 600; font-size: 14px; color: var(--text); }
-    .drop-sub { font-size: 12px; color: var(--text-hint); margin-top: 2px; }
+    .drop-zone:hover { border-color: var(--border-mid); background: var(--hover); }
+    .drop-zone.dragging { border-color: var(--ink); border-style: solid; background: var(--hover); }
+    .drop-zone.has-file { border-style: solid; border-color: #2d6a4f55; background: #f0f7f3; }
+    .drop-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+    .dz-icon { font-size: 24px; color: var(--hint); margin-bottom: 7px; display: block; }
+    .drop-zone.has-file .dz-icon { color: #2d6a4f; }
+    .dz-main { font-size: 13px; font-weight: 500; color: var(--muted); }
+    .drop-zone.has-file .dz-main { color: var(--text); font-weight: 600; }
+    .dz-sub { font-size: 11px; color: var(--hint); margin-top: 3px; }
 
-    /* ── Textarea ── */
+    /* Separator */
+    .sep { display: flex; align-items: center; gap: 10px; }
+    .sep-line { flex: 1; height: 1px; background: var(--border); }
+    .sep-text { font-size: 11px; color: var(--hint); font-weight: 500; letter-spacing: 0.04em; }
+
+    /* Textarea */
     textarea {
-      width: 100%;
-      padding: 10px 12px;
-      font-size: 13px;
-      font-family: var(--mono);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      background: var(--surface);
-      color: var(--text);
-      resize: vertical;
-      line-height: 1.55;
-      outline: none;
-      transition: border-color 0.15s;
+      width: 100%; padding: 12px 14px; font-size: 13px;
+      font-family: var(--mono); border: 1px solid var(--border);
+      border-radius: 12px; background: var(--surface2);
+      color: var(--text); resize: none; line-height: 1.6; outline: none;
+      transition: border-color 0.14s, background 0.14s;
     }
-    textarea:focus { border-color: var(--accent); }
+    textarea:focus { border-color: var(--border-mid); background: var(--surface); }
+    textarea::placeholder { color: var(--hint); }
 
-    /* ── Key input ── */
-    .key-row { display: flex; gap: 10px; align-items: flex-end; }
-    .key-field { flex: 1; }
-    label { font-size: 13px; color: var(--text-muted); display: block; margin-bottom: 5px; }
-    input[type="text"],
-    input[type="password"] {
-      width: 100%;
-      padding: 9px 13px;
-      font-size: 14px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      background: var(--surface);
-      color: var(--text);
-      font-family: inherit;
-      outline: none;
-      transition: border-color 0.15s;
+    /* Key */
+    .key-wrap { position: relative; }
+    .key-wrap input {
+      width: 100%; padding: 11px 44px 11px 14px; font-size: 14px;
+      border: 1px solid var(--border); border-radius: 12px;
+      background: var(--surface2); color: var(--text);
+      font-family: 'Inter', sans-serif; outline: none; letter-spacing: 0.04em;
+      transition: border-color 0.14s, background 0.14s;
     }
-    input:focus { border-color: var(--accent); }
+    .key-wrap input:focus { border-color: var(--border-mid); background: var(--surface); }
+    .key-wrap input::placeholder { color: var(--hint); letter-spacing: 0; }
     .eye-btn {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 9px 12px;
-      cursor: pointer;
-      color: var(--text-muted);
-      font-size: 18px;
-      height: 40px;
-      display: flex; align-items: center;
-      transition: background 0.12s;
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer; color: var(--hint);
+      font-size: 17px; display: flex; align-items: center;
+      transition: color 0.14s;
     }
-    .eye-btn:hover { background: var(--surface2); }
+    .eye-btn:hover { color: var(--muted); }
 
-    /* ── Action buttons ── */
-    .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    /* Buttons */
+    .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .btn {
-      padding: 11px 16px;
-      border-radius: var(--radius-sm);
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      font-family: inherit;
+      padding: 12px 16px; border-radius: 12px; font-size: 13px; font-weight: 600;
+      cursor: pointer; font-family: 'Inter', sans-serif;
       display: flex; align-items: center; justify-content: center; gap: 7px;
-      transition: background 0.12s, transform 0.1s;
-      border: 1px solid var(--border);
+      transition: background 0.14s, border-color 0.14s, transform 0.1s;
     }
     .btn:active { transform: scale(0.98); }
-    .btn:disabled { opacity: 0.38; cursor: not-allowed; transform: none; }
-    .btn-encrypt { background: var(--accent); color: #fff; border-color: var(--accent); }
-    .btn-encrypt:hover:not(:disabled) { background: var(--accent-dark); }
-    .btn-decrypt { background: var(--surface); color: var(--text); }
-    .btn-decrypt:hover:not(:disabled) { background: var(--surface2); }
+    .btn:disabled { opacity: 0.32; cursor: not-allowed; transform: none; }
+    .btn i { font-size: 15px; }
+    .btn-lock { background: var(--ink); color: var(--ink-inv); border: 1px solid var(--ink); }
+    .btn-lock:hover:not(:disabled) { background: #2e2d2a; }
+    .btn-unlock { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+    .btn-unlock:hover:not(:disabled) { background: var(--hover); border-color: var(--border-mid); }
 
-    /* ── Preview ── */
-    .preview-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-    .preview-actions { display: flex; gap: 6px; align-items: center; }
+    /* Output */
+    .output-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .output-tools { display: flex; gap: 6px; align-items: center; }
     .badge {
       display: inline-flex; align-items: center; gap: 4px;
-      font-size: 11px; font-weight: 600; padding: 3px 9px;
-      border-radius: 20px;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.07em;
+      text-transform: uppercase; padding: 3px 9px; border-radius: 20px;
     }
-    .badge-enc { background: var(--accent-light); color: var(--accent); }
-    .badge-dec { background: var(--success-bg); color: var(--success-text); }
-    .icon-btn {
-      background: none;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 4px 10px;
-      font-size: 12px;
-      cursor: pointer;
-      color: var(--text-muted);
+    .badge i { font-size: 10px; }
+    .badge-enc { background: var(--purple-bg); color: var(--purple-txt); }
+    .badge-dec { background: var(--green-bg); color: var(--green-txt); }
+    .tool-btn {
+      background: none; border: 1px solid var(--border); border-radius: 8px;
+      padding: 4px 10px; font-size: 11.5px; cursor: pointer; color: var(--muted);
       display: flex; align-items: center; gap: 4px;
-      font-family: inherit;
-      transition: background 0.12s;
+      font-family: 'Inter', sans-serif; font-weight: 500;
+      transition: all 0.14s;
     }
-    .icon-btn:hover { background: var(--surface2); }
-    .icon-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-    .icon-btn i { font-size: 14px; }
-
-    .preview-box {
-      min-height: 130px;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 1rem;
-      font-family: var(--mono);
-      font-size: 13px;
-      color: var(--text);
-      line-height: 1.6;
-      white-space: pre-wrap;
-      word-break: break-all;
+    .tool-btn:hover { background: var(--hover); border-color: var(--border-mid); color: var(--text); }
+    .tool-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .tool-btn i { font-size: 13px; }
+    .output-box {
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 12px;
+      padding: 14px; font-family: var(--mono); font-size: 12.5px;
+      color: var(--text); line-height: 1.65;
+      white-space: pre-wrap; word-break: break-all; min-height: 100px;
     }
-    .preview-placeholder { color: var(--text-hint); font-family: inherit; font-style: italic; }
-
-    .download-btn {
-      width: 100%;
-      margin-top: 10px;
-      padding: 9px;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border);
-      font-size: 13px;
-      cursor: pointer;
-      color: var(--text-muted);
-      background: none;
+    .output-placeholder { color: var(--hint); font-style: italic; font-family: 'Inter', sans-serif; }
+    .dl-btn {
+      width: 100%; margin-top: 8px; padding: 10px;
+      border: 1px solid var(--border); border-radius: 12px;
+      background: none; font-size: 12.5px; cursor: pointer; color: var(--muted);
       display: flex; align-items: center; justify-content: center; gap: 6px;
-      font-family: inherit;
-      transition: background 0.12s;
+      font-family: 'Inter', sans-serif; font-weight: 500;
+      transition: all 0.14s;
     }
-    .download-btn:hover:not(:disabled) { background: var(--surface2); }
-    .download-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .dl-btn:hover:not(:disabled) { background: var(--hover); border-color: var(--border-mid); color: var(--text); }
+    .dl-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .dl-btn i { font-size: 14px; }
 
-    /* ── How it works ── */
-    .info-card { background: var(--surface2); border: none; }
-    .steps-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 1rem; }
-    .step { text-align: center; padding: 12px 8px; }
-    .step-num {
-      width: 30px; height: 30px; border-radius: 50%;
-      background: var(--accent-light); color: var(--accent);
-      font-size: 13px; font-weight: 600;
-      display: inline-flex; align-items: center; justify-content: center;
-      margin-bottom: 8px;
-    }
-    .step-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
-    .step-desc { font-size: 12px; color: var(--text-muted); line-height: 1.45; }
-
-    .formula-box {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 10px 16px;
-      font-family: var(--mono);
-      font-size: 13px;
-      color: var(--text);
-      line-height: 2;
-    }
-
-    /* ── Toast ── */
+    /* Toast */
+    .toast-wrap { position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%); pointer-events: none; z-index: 999; }
     .toast {
-      position: fixed;
-      bottom: 28px; left: 50%;
-      transform: translateX(-50%) translateY(10px);
-      background: #1f2937;
-      color: #f9fafb;
-      padding: 10px 20px;
-      border-radius: var(--radius-sm);
-      font-size: 13px;
-      display: flex; align-items: center; gap: 8px;
-      opacity: 0;
-      pointer-events: none;
+      background: var(--ink); color: var(--ink-inv);
+      padding: 10px 18px; border-radius: 10px;
+      font-size: 12.5px; font-weight: 500;
+      display: flex; align-items: center; gap: 8px; white-space: nowrap;
+      opacity: 0; transform: translateY(6px);
       transition: opacity 0.2s, transform 0.2s;
-      white-space: nowrap;
-      z-index: 999;
     }
-    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-    .toast.error { background: #991b1b; }
-    .toast i { font-size: 15px; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.error { background: #7f1d1d; color: #fee2e2; }
+    .toast i { font-size: 14px; }
 
-    /* ── Responsive ── */
-    @media (max-width: 480px) {
-      .page { padding: 1.5rem 1rem 3rem; }
-      .steps-row { grid-template-columns: 1fr; }
+    @media (max-width: 540px) {
+      .shell { padding: 32px 16px 80px; }
+      .panel-header, .panel-body { padding-left: 20px; padding-right: 20px; }
       .actions { grid-template-columns: 1fr; }
+      .wordmark { margin-bottom: 32px; }
     }
   </style>
 </head>
 <body>
 
-<main class="page">
+<div class="shell">
 
-  <!-- Header -->
-  <header class="header">
-    <div class="header-row">
-      <div class="logo"><i class="ti ti-lock"></i></div>
-      <h1>Secure File Locker</h1>
-    </div>
-    <p class="tagline">Vigenère cipher encryption for text files &mdash; FA23-BCS-089</p>
-  </header>
-
-  <!-- Input card -->
-  <div class="card">
-    <p class="section-label">Input</p>
-    <div class="drop-zone" id="dropZone">
-      <input type="file" id="fileInput" accept=".txt" aria-label="Upload a .txt file" />
-      <i class="ti ti-file-text" id="dropIcon"></i>
-      <p class="drop-main" id="dropMain">Drop a .txt file here, or click to browse</p>
-      <p class="drop-sub" id="dropSub">Accepts .txt files only</p>
-    </div>
-    <div class="divider"></div>
-    <label for="pasteArea" style="margin-bottom:6px;">Or paste text directly</label>
-    <textarea id="pasteArea" rows="5" placeholder="Paste your plaintext or ciphertext here…" aria-label="Text to encrypt or decrypt"></textarea>
+  <div class="wordmark">
+    <div class="wm-icon"><i class="ti ti-lock" aria-hidden="true"></i></div>
+    <span class="wm-text">Secure File Locker</span>
   </div>
 
-  <!-- Key card -->
-  <div class="card">
-    <p class="section-label">Vigenère Key</p>
-    <div class="key-row">
-      <div class="key-field">
-        <label for="keyInput">Secret keyword (letters only)</label>
-        <input type="password" id="keyInput" placeholder="e.g. SECRETKEY" autocomplete="off" aria-label="Vigenère cipher key" />
+  <main class="panel" aria-label="Secure File Locker">
+    <div class="panel-header">
+      <h1 class="panel-title">Encrypt or decrypt</h1>
+      <p class="panel-sub">Upload a .txt file or paste text, enter a key, then lock or unlock.</p>
+    </div>
+
+    <div class="panel-body">
+
+      <div class="fg">
+        <span class="fl">File</span>
+        <div class="drop-zone" id="dropZone">
+          <input type="file" id="fileInput" accept=".txt" aria-label="Upload a .txt file" />
+          <i class="ti ti-file-text dz-icon" id="dzIcon" aria-hidden="true"></i>
+          <p class="dz-main" id="dzMain">Drop a .txt file, or click to browse</p>
+          <p class="dz-sub" id="dzSub">Accepts .txt files only</p>
+        </div>
       </div>
-      <button class="eye-btn" id="toggleKey" aria-label="Toggle key visibility">
-        <i class="ti ti-eye" id="eyeIcon"></i>
-      </button>
-    </div>
-  </div>
 
-  <!-- Action card -->
-  <div class="card">
-    <p class="section-label">Action</p>
-    <div class="actions">
-      <button class="btn btn-encrypt" id="encBtn" disabled>
-        <i class="ti ti-lock"></i> Lock (Encrypt)
-      </button>
-      <button class="btn btn-decrypt" id="decBtn" disabled>
-        <i class="ti ti-lock-open"></i> Unlock (Decrypt)
-      </button>
-    </div>
-  </div>
+      <div class="sep">
+        <div class="sep-line"></div>
+        <span class="sep-text">or paste text</span>
+        <div class="sep-line"></div>
+      </div>
 
-  <!-- Output card -->
-  <div class="card">
-    <div class="preview-bar">
-      <p class="section-label" style="margin:0;">Output Preview</p>
-      <div class="preview-actions">
-        <span id="modeBadge" style="display:none;"></span>
-        <button class="icon-btn" id="copyBtn" disabled aria-label="Copy output">
-          <i class="ti ti-copy"></i> Copy
+      <div class="fg">
+        <textarea id="pasteArea" rows="4" placeholder="Paste plaintext or ciphertext here…" aria-label="Text to encrypt or decrypt"></textarea>
+      </div>
+
+      <div class="fg">
+        <span class="fl">Key</span>
+        <div class="key-wrap">
+          <input type="password" id="keyInput" placeholder="Enter keyword — letters only" autocomplete="off" aria-label="Vigenère cipher key" />
+          <button class="eye-btn" id="toggleKey" aria-label="Toggle key visibility">
+            <i class="ti ti-eye" id="eyeIcon"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="fg">
+        <div class="actions">
+          <button class="btn btn-lock" id="encBtn" disabled>
+            <i class="ti ti-lock"></i> Lock
+          </button>
+          <button class="btn btn-unlock" id="decBtn" disabled>
+            <i class="ti ti-lock-open"></i> Unlock
+          </button>
+        </div>
+      </div>
+
+      <div class="fg">
+        <div class="output-bar">
+          <span class="fl" style="margin:0">Output</span>
+          <div class="output-tools">
+            <span id="modeBadge" style="display:none"></span>
+            <button class="tool-btn" id="copyBtn" disabled aria-label="Copy output">
+              <i class="ti ti-copy"></i> Copy
+            </button>
+          </div>
+        </div>
+        <div class="output-box" id="preview" role="region" aria-label="Cipher output">
+          <span class="output-placeholder" id="placeholder">Result appears here.</span>
+        </div>
+        <button class="dl-btn" id="dlBtn" disabled aria-label="Download output as .txt">
+          <i class="ti ti-download"></i> Download .txt
         </button>
       </div>
+
     </div>
-    <div class="preview-box" id="preview" role="region" aria-label="Output">
-      <span class="preview-placeholder" id="placeholder">Your output will appear here after encrypting or decrypting.</span>
-    </div>
-    <button class="download-btn" id="downloadBtn" disabled aria-label="Download output as .txt file">
-      <i class="ti ti-download"></i> Download as .txt
-    </button>
+  </main>
+
+</div>
+
+<div class="toast-wrap">
+  <div class="toast" id="toast" role="alert" aria-live="polite">
+    <i class="ti ti-check" id="toastIcon"></i>
+    <span id="toastMsg"></span>
   </div>
-
-  <!-- How it works card -->
-  <div class="card info-card">
-    <p class="section-label">How the Vigenère cipher works</p>
-    <div class="steps-row">
-      <div class="step">
-        <div class="step-num">1</div>
-        <p class="step-title">Input text</p>
-        <p class="step-desc">Each letter maps to a number (A=0, B=1 … Z=25). Non-letters pass through unchanged.</p>
-      </div>
-      <div class="step">
-        <div class="step-num">2</div>
-        <p class="step-title">Repeat key</p>
-        <p class="step-desc">The keyword cycles to match the length of your text, character by character.</p>
-      </div>
-      <div class="step">
-        <div class="step-num">3</div>
-        <p class="step-title">Shift & wrap</p>
-        <p class="step-desc">Each letter is shifted by its key value, wrapping around at 26.</p>
-      </div>
-    </div>
-    <div class="formula-box">
-      Encrypt: E&#7522; = (P&#7522; + K&#7522;) mod 26<br>
-      Decrypt: D&#7522; = (C&#7522; &minus; K&#7522; + 26) mod 26
-    </div>
-  </div>
-
-</main>
-
-<!-- Toast notification -->
-<div class="toast" id="toast" role="alert" aria-live="polite">
-  <i class="ti ti-check" id="toastIcon"></i>
-  <span id="toastMsg"></span>
 </div>
 
 <script>
-  /* ── State ── */
-  let fileText   = '';
-  let outputText = '';
-  let keyVisible = false;
+  let fileText = '', outputText = '', keyVisible = false;
+  const $ = id => document.getElementById(id);
+  const pasteArea=$('pasteArea'), keyInput=$('keyInput'), encBtn=$('encBtn'), decBtn=$('decBtn');
+  const preview=$('preview'), placeholder=$('placeholder'), copyBtn=$('copyBtn'), dlBtn=$('dlBtn');
+  const dropZone=$('dropZone'), fileInput=$('fileInput'), dzIcon=$('dzIcon'), dzMain=$('dzMain'), dzSub=$('dzSub');
+  const modeBadge=$('modeBadge'), toggleKey=$('toggleKey'), eyeIcon=$('eyeIcon');
+  const toast=$('toast'), toastMsg=$('toastMsg'), toastIcon=$('toastIcon');
 
-  /* ── Elements ── */
-  const pasteArea   = document.getElementById('pasteArea');
-  const keyInput    = document.getElementById('keyInput');
-  const encBtn      = document.getElementById('encBtn');
-  const decBtn      = document.getElementById('decBtn');
-  const preview     = document.getElementById('preview');
-  const placeholder = document.getElementById('placeholder');
-  const copyBtn     = document.getElementById('copyBtn');
-  const downloadBtn = document.getElementById('downloadBtn');
-  const dropZone    = document.getElementById('dropZone');
-  const fileInput   = document.getElementById('fileInput');
-  const dropIcon    = document.getElementById('dropIcon');
-  const dropMain    = document.getElementById('dropMain');
-  const dropSub     = document.getElementById('dropSub');
-  const modeBadge   = document.getElementById('modeBadge');
-  const toggleKey   = document.getElementById('toggleKey');
-  const eyeIcon     = document.getElementById('eyeIcon');
-  const toast       = document.getElementById('toast');
-  const toastMsg    = document.getElementById('toastMsg');
-  const toastIcon   = document.getElementById('toastIcon');
-
-  /* ── Helpers ── */
   function checkReady() {
     const hasText = pasteArea.value.trim().length > 0 || fileText.length > 0;
-    const hasKey  = keyInput.value.replace(/[^a-zA-Z]/g, '').length > 0;
-    encBtn.disabled = !(hasText && hasKey);
-    decBtn.disabled = !(hasText && hasKey);
+    const hasKey = keyInput.value.replace(/[^a-zA-Z]/g, '').length > 0;
+    encBtn.disabled = decBtn.disabled = !(hasText && hasKey);
   }
-
-  function showToast(msg, error = false) {
+  function showToast(msg, err = false) {
     toastMsg.textContent = msg;
-    toast.className      = 'toast' + (error ? ' error' : '');
-    toastIcon.className  = error ? 'ti ti-x' : 'ti ti-check';
+    toast.className = 'toast' + (err ? ' error' : '');
+    toastIcon.className = err ? 'ti ti-x' : 'ti ti-check';
     toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 2800);
+    setTimeout(() => toast.classList.remove('show'), 2600);
   }
-
   function setOutput(text, mode) {
     outputText = text;
     placeholder.style.display = 'none';
-    preview.textContent        = text.slice(0, 5000) + (text.length > 5000 ? '\n…(truncated for preview)' : '');
-    copyBtn.disabled           = false;
-    downloadBtn.disabled       = false;
-    modeBadge.style.display    = 'inline-flex';
-    modeBadge.className        = 'badge ' + (mode === 'enc' ? 'badge-enc' : 'badge-dec');
-    modeBadge.innerHTML        = mode === 'enc'
-      ? '<i class="ti ti-lock" style="font-size:11px;"></i>Encrypted'
-      : '<i class="ti ti-lock-open" style="font-size:11px;"></i>Decrypted';
+    preview.textContent = text.slice(0, 6000) + (text.length > 6000 ? '\n…(truncated for preview)' : '');
+    copyBtn.disabled = dlBtn.disabled = false;
+    modeBadge.style.display = 'inline-flex';
+    modeBadge.className = 'badge ' + (mode === 'enc' ? 'badge-enc' : 'badge-dec');
+    modeBadge.innerHTML = mode === 'enc'
+      ? '<i class="ti ti-lock"></i>Encrypted'
+      : '<i class="ti ti-lock-open"></i>Decrypted';
   }
-
-  /* ── Vigenère cipher ── */
-  function vigenere(text, key, encrypt) {
-    const k    = key.toUpperCase().replace(/[^A-Z]/g, '');
+  function vigenere(text, key, enc) {
+    const k = key.toUpperCase().replace(/[^A-Z]/g, '');
     if (!k.length) return text;
-    let kIdx = 0;
+    let ki = 0;
     return text.split('').map(ch => {
       if (/[a-zA-Z]/.test(ch)) {
-        const upper = ch === ch.toUpperCase();
-        const base  = upper ? 65 : 97;
-        const shift = k.charCodeAt(kIdx % k.length) - 65;
-        const code  = ch.toUpperCase().charCodeAt(0) - 65;
-        const res   = encrypt ? (code + shift) % 26 : (code - shift + 26) % 26;
-        kIdx++;
-        return String.fromCharCode(res + base);
+        const up = ch === ch.toUpperCase(), base = up ? 65 : 97;
+        const shift = k.charCodeAt(ki % k.length) - 65;
+        const code = ch.toUpperCase().charCodeAt(0) - 65;
+        const r = enc ? (code + shift) % 26 : (code - shift + 26) % 26;
+        ki++;
+        return String.fromCharCode(r + base);
       }
       return ch;
     }).join('');
   }
-
-  /* ── File upload ── */
   function loadFile(f) {
     if (!f) return;
     if (!f.name.endsWith('.txt')) { showToast('Please upload a .txt file', true); return; }
     const r = new FileReader();
     r.onload = ev => {
-      fileText         = ev.target.result;
-      pasteArea.value  = fileText.slice(0, 3000) + (fileText.length > 3000 ? '…' : '');
+      fileText = ev.target.result;
+      pasteArea.value = fileText.slice(0, 3000) + (fileText.length > 3000 ? '…' : '');
       dropZone.classList.add('has-file');
-      dropIcon.className = 'ti ti-file-check';
-      dropMain.textContent = f.name;
-      dropSub.textContent  = (f.size / 1024).toFixed(1) + ' KB';
+      dzIcon.className = 'ti ti-file-check dz-icon';
+      dzMain.textContent = f.name;
+      dzSub.textContent = (f.size / 1024).toFixed(1) + ' KB';
       checkReady();
     };
     r.readAsText(f);
   }
-
   fileInput.addEventListener('change', e => loadFile(e.target.files[0]));
-  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.background = '#e8edfb'; });
-  dropZone.addEventListener('dragleave', () => { dropZone.style.background = ''; });
-  dropZone.addEventListener('drop', e => {
-    e.preventDefault();
-    dropZone.style.background = '';
-    loadFile(e.dataTransfer.files[0]);
-  });
-
-  /* ── Controls ── */
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragging'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragging'));
+  dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragging'); loadFile(e.dataTransfer.files[0]); });
   pasteArea.addEventListener('input', () => { fileText = ''; checkReady(); });
   keyInput.addEventListener('input', checkReady);
-
   toggleKey.addEventListener('click', () => {
-    keyVisible      = !keyVisible;
-    keyInput.type   = keyVisible ? 'text' : 'password';
+    keyVisible = !keyVisible;
+    keyInput.type = keyVisible ? 'text' : 'password';
     eyeIcon.className = keyVisible ? 'ti ti-eye-off' : 'ti ti-eye';
   });
-
   encBtn.addEventListener('click', () => {
-    const text = fileText || pasteArea.value;
-    const key  = keyInput.value;
-    if (!key.replace(/[^a-zA-Z]/g, '').length) { showToast('Key must contain at least one letter', true); return; }
-    setOutput(vigenere(text, key, true), 'enc');
-    showToast('File encrypted successfully');
+    const t = fileText || pasteArea.value, k = keyInput.value;
+    if (!k.replace(/[^a-zA-Z]/g, '').length) { showToast('Key must contain letters', true); return; }
+    setOutput(vigenere(t, k, true), 'enc');
+    showToast('Encrypted successfully');
   });
-
   decBtn.addEventListener('click', () => {
-    const text = fileText || pasteArea.value;
-    const key  = keyInput.value;
-    if (!key.replace(/[^a-zA-Z]/g, '').length) { showToast('Key must contain at least one letter', true); return; }
-    setOutput(vigenere(text, key, false), 'dec');
-    showToast('File decrypted successfully');
+    const t = fileText || pasteArea.value, k = keyInput.value;
+    if (!k.replace(/[^a-zA-Z]/g, '').length) { showToast('Key must contain letters', true); return; }
+    setOutput(vigenere(t, k, false), 'dec');
+    showToast('Decrypted successfully');
   });
-
   copyBtn.addEventListener('click', () => {
     navigator.clipboard.writeText(outputText).then(() => showToast('Copied to clipboard'));
   });
-
-  downloadBtn.addEventListener('click', () => {
-    const blob = new Blob([outputText], { type: 'text/plain' });
-    const a    = document.createElement('a');
-    a.href     = URL.createObjectURL(blob);
-    a.download = 'secure_output.txt';
-    a.click();
-    URL.revokeObjectURL(a.href);
+  dlBtn.addEventListener('click', () => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([outputText], { type: 'text/plain' }));
+    a.download = 'secure_output.txt'; a.click(); URL.revokeObjectURL(a.href);
     showToast('Downloaded secure_output.txt');
   });
 </script>
