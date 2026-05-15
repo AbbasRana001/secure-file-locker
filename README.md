@@ -2,8 +2,6 @@
 
 A web application that encrypts and decrypts `.txt` files using the **Vigenère cipher**.
 
-Built as a web version of the FA23-BCS-089 Information Security Lab Assignment 3.
-
 ## Features
 
 - Upload a `.txt` file or paste text directly
