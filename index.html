@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Secure File Locker</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/1.119.0/iconfont/tabler-icons.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f8f9fb;
+      --surface: #ffffff;
+      --surface2: #f1f3f7;
+      --border: #e2e6ef;
+      --border-mid: #c8cdd9;
+      --text: #1a1d27;
+      --text-muted: #6b7280;
+      --text-hint: #9ca3af;
+      --accent: #3b5bdb;
+      --accent-light: #e8edfb;
+      --accent-dark: #2f49b8;
+      --success-bg: #eaf3de;
+      --success-text: #3b6d11;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --mono: 'Courier New', Courier, monospace;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ── Layout ── */
+    .page { max-width: 680px; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
+
+    /* ── Header ── */
+    .header { margin-bottom: 2rem; }
+    .header-row { display: flex; align-items: center; gap: 12px; margin-bottom: 2px; }
+    .logo { width: 40px; height: 40px; background: var(--accent-light); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .logo i { font-size: 22px; color: var(--accent); }
+    h1 { font-size: 21px; font-weight: 600; color: var(--text); }
+    .tagline { font-size: 13px; color: var(--text-muted); margin-left: 52px; }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .divider { height: 1px; background: var(--border); margin: 1rem 0; }
+
+    /* ── File drop zone ── */
+    .drop-zone {
+      position: relative;
+      border: 1.5px dashed var(--border-mid);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .drop-zone:hover { background: var(--surface2); border-color: var(--accent); }
+    .drop-zone.has-file { border-style: solid; border-color: #3b5bdb66; background: var(--accent-light); }
+    .drop-zone input[type="file"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .drop-zone i { font-size: 30px; color: var(--text-hint); margin-bottom: 8px; display: block; }
+    .drop-zone.has-file i { color: var(--accent); }
+    .drop-main { font-size: 14px; color: var(--text-muted); }
+    .drop-zone.has-file .drop-main { font-weight: 600; font-size: 14px; color: var(--text); }
+    .drop-sub { font-size: 12px; color: var(--text-hint); margin-top: 2px; }
+
+    /* ── Textarea ── */
+    textarea {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 13px;
+      font-family: var(--mono);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--text);
+      resize: vertical;
+      line-height: 1.55;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    textarea:focus { border-color: var(--accent); }
+
+    /* ── Key input ── */
+    .key-row { display: flex; gap: 10px; align-items: flex-end; }
+    .key-field { flex: 1; }
+    label { font-size: 13px; color: var(--text-muted); display: block; margin-bottom: 5px; }
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: 9px 13px;
+      font-size: 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--text);
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input:focus { border-color: var(--accent); }
+    .eye-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 9px 12px;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 18px;
+      height: 40px;
+      display: flex; align-items: center;
+      transition: background 0.12s;
+    }
+    .eye-btn:hover { background: var(--surface2); }
+
+    /* ── Action buttons ── */
+    .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .btn {
+      padding: 11px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      transition: background 0.12s, transform 0.1s;
+      border: 1px solid var(--border);
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.38; cursor: not-allowed; transform: none; }
+    .btn-encrypt { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .btn-encrypt:hover:not(:disabled) { background: var(--accent-dark); }
+    .btn-decrypt { background: var(--surface); color: var(--text); }
+    .btn-decrypt:hover:not(:disabled) { background: var(--surface2); }
+
+    /* ── Preview ── */
+    .preview-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .preview-actions { display: flex; gap: 6px; align-items: center; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 11px; font-weight: 600; padding: 3px 9px;
+      border-radius: 20px;
+    }
+    .badge-enc { background: var(--accent-light); color: var(--accent); }
+    .badge-dec { background: var(--success-bg); color: var(--success-text); }
+    .icon-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 4px 10px;
+      font-size: 12px;
+      cursor: pointer;
+      color: var(--text-muted);
+      display: flex; align-items: center; gap: 4px;
+      font-family: inherit;
+      transition: background 0.12s;
+    }
+    .icon-btn:hover { background: var(--surface2); }
+    .icon-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .icon-btn i { font-size: 14px; }
+
+    .preview-box {
+      min-height: 130px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1rem;
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--text);
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .preview-placeholder { color: var(--text-hint); font-family: inherit; font-style: italic; }
+
+    .download-btn {
+      width: 100%;
+      margin-top: 10px;
+      padding: 9px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      font-size: 13px;
+      cursor: pointer;
+      color: var(--text-muted);
+      background: none;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      font-family: inherit;
+      transition: background 0.12s;
+    }
+    .download-btn:hover:not(:disabled) { background: var(--surface2); }
+    .download-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    /* ── How it works ── */
+    .info-card { background: var(--surface2); border: none; }
+    .steps-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 1rem; }
+    .step { text-align: center; padding: 12px 8px; }
+    .step-num {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--accent-light); color: var(--accent);
+      font-size: 13px; font-weight: 600;
+      display: inline-flex; align-items: center; justify-content: center;
+      margin-bottom: 8px;
+    }
+    .step-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+    .step-desc { font-size: 12px; color: var(--text-muted); line-height: 1.45; }
+
+    .formula-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 16px;
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--text);
+      line-height: 2;
+    }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: 28px; left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      background: #1f2937;
+      color: #f9fafb;
+      padding: 10px 20px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      display: flex; align-items: center; gap: 8px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s, transform 0.2s;
+      white-space: nowrap;
+      z-index: 999;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.error { background: #991b1b; }
+    .toast i { font-size: 15px; }
+
+    /* ── Responsive ── */
+    @media (max-width: 480px) {
+      .page { padding: 1.5rem 1rem 3rem; }
+      .steps-row { grid-template-columns: 1fr; }
+      .actions { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<main class="page">
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-row">
+      <div class="logo"><i class="ti ti-lock"></i></div>
+      <h1>Secure File Locker</h1>
+    </div>
+    <p class="tagline">Vigenère cipher encryption for text files &mdash; FA23-BCS-089</p>
+  </header>
+
+  <!-- Input card -->
+  <div class="card">
+    <p class="section-label">Input</p>
+    <div class="drop-zone" id="dropZone">
+      <input type="file" id="fileInput" accept=".txt" aria-label="Upload a .txt file" />
+      <i class="ti ti-file-text" id="dropIcon"></i>
+      <p class="drop-main" id="dropMain">Drop a .txt file here, or click to browse</p>
+      <p class="drop-sub" id="dropSub">Accepts .txt files only</p>
+    </div>
+    <div class="divider"></div>
+    <label for="pasteArea" style="margin-bottom:6px;">Or paste text directly</label>
+    <textarea id="pasteArea" rows="5" placeholder="Paste your plaintext or ciphertext here…" aria-label="Text to encrypt or decrypt"></textarea>
+  </div>
+
+  <!-- Key card -->
+  <div class="card">
+    <p class="section-label">Vigenère Key</p>
+    <div class="key-row">
+      <div class="key-field">
+        <label for="keyInput">Secret keyword (letters only)</label>
+        <input type="password" id="keyInput" placeholder="e.g. SECRETKEY" autocomplete="off" aria-label="Vigenère cipher key" />
+      </div>
+      <button class="eye-btn" id="toggleKey" aria-label="Toggle key visibility">
+        <i class="ti ti-eye" id="eyeIcon"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Action card -->
+  <div class="card">
+    <p class="section-label">Action</p>
+    <div class="actions">
+      <button class="btn btn-encrypt" id="encBtn" disabled>
+        <i class="ti ti-lock"></i> Lock (Encrypt)
+      </button>
+      <button class="btn btn-decrypt" id="decBtn" disabled>
+        <i class="ti ti-lock-open"></i> Unlock (Decrypt)
+      </button>
+    </div>
+  </div>
+
+  <!-- Output card -->
+  <div class="card">
+    <div class="preview-bar">
+      <p class="section-label" style="margin:0;">Output Preview</p>
+      <div class="preview-actions">
+        <span id="modeBadge" style="display:none;"></span>
+        <button class="icon-btn" id="copyBtn" disabled aria-label="Copy output">
+          <i class="ti ti-copy"></i> Copy
+        </button>
+      </div>
+    </div>
+    <div class="preview-box" id="preview" role="region" aria-label="Output">
+      <span class="preview-placeholder" id="placeholder">Your output will appear here after encrypting or decrypting.</span>
+    </div>
+    <button class="download-btn" id="downloadBtn" disabled aria-label="Download output as .txt file">
+      <i class="ti ti-download"></i> Download as .txt
+    </button>
+  </div>
+
+  <!-- How it works card -->
+  <div class="card info-card">
+    <p class="section-label">How the Vigenère cipher works</p>
+    <div class="steps-row">
+      <div class="step">
+        <div class="step-num">1</div>
+        <p class="step-title">Input text</p>
+        <p class="step-desc">Each letter maps to a number (A=0, B=1 … Z=25). Non-letters pass through unchanged.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <p class="step-title">Repeat key</p>
+        <p class="step-desc">The keyword cycles to match the length of your text, character by character.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <p class="step-title">Shift & wrap</p>
+        <p class="step-desc">Each letter is shifted by its key value, wrapping around at 26.</p>
+      </div>
+    </div>
+    <div class="formula-box">
+      Encrypt: E&#7522; = (P&#7522; + K&#7522;) mod 26<br>
+      Decrypt: D&#7522; = (C&#7522; &minus; K&#7522; + 26) mod 26
+    </div>
+  </div>
+
+</main>
+
+<!-- Toast notification -->
+<div class="toast" id="toast" role="alert" aria-live="polite">
+  <i class="ti ti-check" id="toastIcon"></i>
+  <span id="toastMsg"></span>
+</div>
+
+<script>
+  /* ── State ── */
+  let fileText   = '';
+  let outputText = '';
+  let keyVisible = false;
+
+  /* ── Elements ── */
+  const pasteArea   = document.getElementById('pasteArea');
+  const keyInput    = document.getElementById('keyInput');
+  const encBtn      = document.getElementById('encBtn');
+  const decBtn      = document.getElementById('decBtn');
+  const preview     = document.getElementById('preview');
+  const placeholder = document.getElementById('placeholder');
+  const copyBtn     = document.getElementById('copyBtn');
+  const downloadBtn = document.getElementById('downloadBtn');
+  const dropZone    = document.getElementById('dropZone');
+  const fileInput   = document.getElementById('fileInput');
+  const dropIcon    = document.getElementById('dropIcon');
+  const dropMain    = document.getElementById('dropMain');
+  const dropSub     = document.getElementById('dropSub');
+  const modeBadge   = document.getElementById('modeBadge');
+  const toggleKey   = document.getElementById('toggleKey');
+  const eyeIcon     = document.getElementById('eyeIcon');
+  const toast       = document.getElementById('toast');
+  const toastMsg    = document.getElementById('toastMsg');
+  const toastIcon   = document.getElementById('toastIcon');
+
+  /* ── Helpers ── */
+  function checkReady() {
+    const hasText = pasteArea.value.trim().length > 0 || fileText.length > 0;
+    const hasKey  = keyInput.value.replace(/[^a-zA-Z]/g, '').length > 0;
+    encBtn.disabled = !(hasText && hasKey);
+    decBtn.disabled = !(hasText && hasKey);
+  }
+
+  function showToast(msg, error = false) {
+    toastMsg.textContent = msg;
+    toast.className      = 'toast' + (error ? ' error' : '');
+    toastIcon.className  = error ? 'ti ti-x' : 'ti ti-check';
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2800);
+  }
+
+  function setOutput(text, mode) {
+    outputText = text;
+    placeholder.style.display = 'none';
+    preview.textContent        = text.slice(0, 5000) + (text.length > 5000 ? '\n…(truncated for preview)' : '');
+    copyBtn.disabled           = false;
+    downloadBtn.disabled       = false;
+    modeBadge.style.display    = 'inline-flex';
+    modeBadge.className        = 'badge ' + (mode === 'enc' ? 'badge-enc' : 'badge-dec');
+    modeBadge.innerHTML        = mode === 'enc'
+      ? '<i class="ti ti-lock" style="font-size:11px;"></i>Encrypted'
+      : '<i class="ti ti-lock-open" style="font-size:11px;"></i>Decrypted';
+  }
+
+  /* ── Vigenère cipher ── */
+  function vigenere(text, key, encrypt) {
+    const k    = key.toUpperCase().replace(/[^A-Z]/g, '');
+    if (!k.length) return text;
+    let kIdx = 0;
+    return text.split('').map(ch => {
+      if (/[a-zA-Z]/.test(ch)) {
+        const upper = ch === ch.toUpperCase();
+        const base  = upper ? 65 : 97;
+        const shift = k.charCodeAt(kIdx % k.length) - 65;
+        const code  = ch.toUpperCase().charCodeAt(0) - 65;
+        const res   = encrypt ? (code + shift) % 26 : (code - shift + 26) % 26;
+        kIdx++;
+        return String.fromCharCode(res + base);
+      }
+      return ch;
+    }).join('');
+  }
+
+  /* ── File upload ── */
+  function loadFile(f) {
+    if (!f) return;
+    if (!f.name.endsWith('.txt')) { showToast('Please upload a .txt file', true); return; }
+    const r = new FileReader();
+    r.onload = ev => {
+      fileText         = ev.target.result;
+      pasteArea.value  = fileText.slice(0, 3000) + (fileText.length > 3000 ? '…' : '');
+      dropZone.classList.add('has-file');
+      dropIcon.className = 'ti ti-file-check';
+      dropMain.textContent = f.name;
+      dropSub.textContent  = (f.size / 1024).toFixed(1) + ' KB';
+      checkReady();
+    };
+    r.readAsText(f);
+  }
+
+  fileInput.addEventListener('change', e => loadFile(e.target.files[0]));
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.background = '#e8edfb'; });
+  dropZone.addEventListener('dragleave', () => { dropZone.style.background = ''; });
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.style.background = '';
+    loadFile(e.dataTransfer.files[0]);
+  });
+
+  /* ── Controls ── */
+  pasteArea.addEventListener('input', () => { fileText = ''; checkReady(); });
+  keyInput.addEventListener('input', checkReady);
+
+  toggleKey.addEventListener('click', () => {
+    keyVisible      = !keyVisible;
+    keyInput.type   = keyVisible ? 'text' : 'password';
+    eyeIcon.className = keyVisible ? 'ti ti-eye-off' : 'ti ti-eye';
+  });
+
+  encBtn.addEventListener('click', () => {
+    const text = fileText || pasteArea.value;
+    const key  = keyInput.value;
+    if (!key.replace(/[^a-zA-Z]/g, '').length) { showToast('Key must contain at least one letter', true); return; }
+    setOutput(vigenere(text, key, true), 'enc');
+    showToast('File encrypted successfully');
+  });
+
+  decBtn.addEventListener('click', () => {
+    const text = fileText || pasteArea.value;
+    const key  = keyInput.value;
+    if (!key.replace(/[^a-zA-Z]/g, '').length) { showToast('Key must contain at least one letter', true); return; }
+    setOutput(vigenere(text, key, false), 'dec');
+    showToast('File decrypted successfully');
+  });
+
+  copyBtn.addEventListener('click', () => {
+    navigator.clipboard.writeText(outputText).then(() => showToast('Copied to clipboard'));
+  });
+
+  downloadBtn.addEventListener('click', () => {
+    const blob = new Blob([outputText], { type: 'text/plain' });
+    const a    = document.createElement('a');
+    a.href     = URL.createObjectURL(blob);
+    a.download = 'secure_output.txt';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showToast('Downloaded secure_output.txt');
+  });
+</script>
+</body>
+</html>
