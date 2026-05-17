@@ -147,7 +147,7 @@ eyeBtn.addEventListener("click", () => {
   const show = keyInput.type === "password";
   keyInput.type = show ? "text" : "password";
   eyeBtn.setAttribute("aria-label", show ? "Hide key" : "Show key");
-  eyeBtn.querySelector(".eye-icon").textContent = show ? "🙈" : "👁";
+  eyeBtn.querySelector(".eye-icon").textContent = show ? "👁" : "🙈";
 });
 
 encBtn.addEventListener("click", () => runCipher("encrypt"));
