@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "api/cipher.py", "use": "@vercel/python" },
+    { "src": "*.html",        "use": "@vercel/static" },
+    { "src": "*.css",         "use": "@vercel/static" },
+    { "src": "*.js",          "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/api/cipher", "dest": "/api/cipher.py" },
+    { "src": "/(.*)",       "dest": "/$1"            }
+  ]
+}
