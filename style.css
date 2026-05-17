@@ -90,15 +90,21 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
-  line-height: 1;
+  flex-shrink: 0;
+}
+
+.nav__brand-icon svg {
+  width: 17px;
+  height: 17px;
+  color: #0a1f14;
 }
 
 .nav__brand-name {
-  font-family: var(--font-disp);
-  font-size: 17px;
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 500;
   color: var(--ink);
-  letter-spacing: -0.01em;
+  letter-spacing: 0.01em;
 }
 
 .nav__tabs {
@@ -516,6 +522,15 @@ textarea:focus {
   white-space: pre-wrap;
   word-break: break-all;
   min-height: 160px;
+  /* Centre the placeholder text when output is empty */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Once output has real content, revert to normal block layout */
+.output-box.has-output {
+  display: block;
 }
 
 .output-placeholder {
@@ -523,6 +538,7 @@ textarea:focus {
   font-family: var(--font-sans);
   font-size: 13px;
   font-style: italic;
+  text-align: center;
 }
 
 .download-btn {
