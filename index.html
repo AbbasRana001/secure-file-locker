@@ -3,390 +3,844 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Secure File Locker</title>
+  <title>CryptoLock — Vigenère Cipher Tool</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/1.119.0/iconfont/tabler-icons.min.css" />
+ 
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+ 
     :root {
-      --bg:         #f0efe9;
-      --surface:    #faf9f7;
-      --surface2:   #f5f4f0;
-      --hover:      #eeede8;
-      --border:     #e0dfd8;
-      --border-mid: #bbb9b3;
-      --text:       #1c1b19;
-      --muted:      #888580;
-      --hint:       #aaa8a2;
-      --ink:        #1c1b19;
-      --ink-inv:    #f0efe9;
-      --green-bg:   #dcfce7;
-      --green-txt:  #166534;
-      --purple-bg:  #e8e6ff;
-      --purple-txt: #4338ca;
-      --mono: 'Courier New', Courier, monospace;
+      --bg:       #0D0E12;
+      --s1:       #13151C;
+      --s2:       #1A1D27;
+      --s3:       #222636;
+      --bdr:      #2A2E40;
+      --bdr2:     #363B52;
+      --acc:      #7C6EF8;
+      --acc2:     #A99CFF;
+      --acc-dim:  #2D2860;
+      --grn:      #34D399;
+      --grn-dim:  #0D3327;
+      --ink:      #F0F1F6;
+      --ink2:     #9095AD;
+      --ink3:     #555A72;
+      --mono:     'Courier New', Courier, monospace;
+      --fs:       'Syne', sans-serif;
+      --fi:       'Inter', sans-serif;
     }
-
+ 
     body {
+      font-family: var(--fi);
       background: var(--bg);
-      color: var(--text);
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--ink);
+      min-height: 100vh;
       font-size: 15px;
       line-height: 1.6;
-      min-height: 100vh;
       -webkit-font-smoothing: antialiased;
     }
-
-    .shell {
-      min-height: 100vh;
+ 
+    /* ── NAV ── */
+    nav {
+      background: rgba(13, 14, 18, 0.97);
+      border-bottom: 1px solid var(--bdr);
+      padding: 0 40px;
+      height: 62px;
       display: flex;
-      flex-direction: column;
       align-items: center;
-      padding: 52px 20px 100px;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
     }
-
-    /* Wordmark */
-    .wordmark { display: flex; align-items: center; gap: 10px; margin-bottom: 48px; }
-    .wm-icon {
-      width: 34px; height: 34px;
-      background: var(--ink); border-radius: 10px;
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-icon {
+      width: 36px; height: 36px;
+      background: var(--acc); border-radius: 10px;
       display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
     }
-    .wm-icon i { font-size: 17px; color: var(--ink-inv); }
-    .wm-text { font-size: 15px; font-weight: 600; letter-spacing: -0.02em; color: var(--text); }
-
-    /* Panel */
-    .panel {
-      width: 100%; max-width: 520px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      overflow: hidden;
+    .brand-icon i { font-size: 18px; color: #fff; }
+    .brand-name {
+      font-family: var(--fs);
+      font-size: 17px; font-weight: 800;
+      color: var(--ink); letter-spacing: -0.02em;
     }
-    .panel-header { padding: 28px 32px 24px; border-bottom: 1px solid var(--border); }
-    .panel-title { font-size: 22px; font-weight: 600; letter-spacing: -0.04em; color: var(--text); margin-bottom: 4px; }
-    .panel-sub { font-size: 13px; color: var(--muted); }
-    .panel-body { padding: 28px 32px; display: flex; flex-direction: column; gap: 22px; }
-
-    /* Field group */
-    .fg { display: flex; flex-direction: column; gap: 7px; }
-    .fl { font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em; color: var(--hint); text-transform: uppercase; }
-
-    /* Drop zone */
-    .drop-zone {
-      position: relative; border: 1.5px dashed var(--border);
-      border-radius: 14px; padding: 22px 16px;
-      text-align: center; cursor: pointer; background: var(--surface2);
-      transition: background 0.15s, border-color 0.15s;
+    .nav-tabs {
+      display: flex; gap: 2px;
+      background: var(--s2);
+      border: 1px solid var(--bdr);
+      border-radius: 12px; padding: 4px;
     }
-    .drop-zone:hover { border-color: var(--border-mid); background: var(--hover); }
-    .drop-zone.dragging { border-color: var(--ink); border-style: solid; background: var(--hover); }
-    .drop-zone.has-file { border-style: solid; border-color: #2d6a4f55; background: #f0f7f3; }
-    .drop-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
-    .dz-icon { font-size: 24px; color: var(--hint); margin-bottom: 7px; display: block; }
-    .drop-zone.has-file .dz-icon { color: #2d6a4f; }
-    .dz-main { font-size: 13px; font-weight: 500; color: var(--muted); }
-    .drop-zone.has-file .dz-main { color: var(--text); font-weight: 600; }
-    .dz-sub { font-size: 11px; color: var(--hint); margin-top: 3px; }
-
-    /* Separator */
-    .sep { display: flex; align-items: center; gap: 10px; }
-    .sep-line { flex: 1; height: 1px; background: var(--border); }
-    .sep-text { font-size: 11px; color: var(--hint); font-weight: 500; letter-spacing: 0.04em; }
-
-    /* Textarea */
+    .tab {
+      background: none; border: none; cursor: pointer;
+      padding: 7px 18px; border-radius: 9px;
+      font-size: 13px; font-weight: 600; font-family: var(--fi);
+      color: var(--ink2);
+      display: flex; align-items: center; gap: 7px;
+      transition: all 0.18s;
+    }
+    .tab i { font-size: 14px; }
+    .tab:hover { color: var(--ink); background: var(--s3); }
+    .tab.on { background: var(--acc); color: #fff; }
+ 
+    /* ── PAGE SWITCHING ── */
+    .pg { display: none; }
+    .pg.on { display: block; animation: fadeUp 0.25s ease; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+ 
+    /* ── TOOL HERO ── */
+    .hero {
+      background: var(--s1);
+      border-bottom: 1px solid var(--bdr);
+      padding: 56px 40px 52px;
+    }
+    .hero-inner {
+      max-width: 920px; margin: 0 auto;
+      display: flex; align-items: flex-start;
+      justify-content: space-between;
+      gap: 40px; flex-wrap: wrap;
+    }
+    .hero-left { flex: 1; min-width: 260px; }
+    .hero-pill {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: var(--acc-dim); border: 1px solid var(--acc);
+      border-radius: 20px; padding: 5px 14px; margin-bottom: 20px;
+    }
+    .hero-pill i { font-size: 13px; color: var(--acc2); }
+    .hero-pill span {
+      font-size: 11.5px; font-weight: 700;
+      letter-spacing: 0.07em; text-transform: uppercase; color: var(--acc2);
+    }
+    .hero h1 {
+      font-family: var(--fs);
+      font-size: 48px; font-weight: 800;
+      line-height: 1.05; letter-spacing: -0.04em;
+      color: var(--ink); margin-bottom: 16px;
+    }
+    .hero h1 em { font-style: normal; color: var(--acc2); }
+    .hero-sub { font-size: 15px; color: var(--ink2); line-height: 1.75; max-width: 440px; }
+    .hero-stats { display: flex; flex-direction: column; gap: 12px; flex-shrink: 0; }
+    .stat-pill {
+      background: var(--s2); border: 1px solid var(--bdr);
+      border-radius: 14px; padding: 14px 20px; min-width: 195px;
+    }
+    .stat-pill .sv {
+      font-family: var(--fs); font-size: 22px; font-weight: 800;
+      color: var(--ink); letter-spacing: -0.03em; margin-bottom: 2px;
+    }
+    .stat-pill .sl { font-size: 11.5px; color: var(--ink2); font-weight: 500; letter-spacing: 0.03em; }
+    .stat-pill.acc { border-color: var(--acc); background: var(--acc-dim); }
+    .stat-pill.acc .sv { color: var(--acc2); }
+ 
+    /* ── TOOL LAYOUT ── */
+    .tool-wrap { max-width: 980px; margin: 0 auto; padding: 36px 40px 80px; }
+    .tool-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+    .col { display: flex; flex-direction: column; gap: 16px; }
+ 
+    /* ── CARDS ── */
+    .card {
+      background: var(--s1);
+      border: 1px solid var(--bdr);
+      border-radius: 18px; padding: 24px;
+    }
+    .card-accent { border-color: var(--acc-dim); }
+    .section-label {
+      font-size: 10.5px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--ink3); margin-bottom: 14px;
+    }
+ 
+    /* ── DROP ZONE ── */
+    .dz {
+      border: 1.5px dashed var(--bdr2); border-radius: 14px;
+      padding: 28px 16px; text-align: center; cursor: pointer;
+      background: var(--s2); position: relative;
+      transition: border-color 0.18s, background 0.18s;
+    }
+    .dz:hover, .dz.ov { border-color: var(--acc); background: var(--s3); }
+    .dz.has { border-style: solid; border-color: var(--grn); background: var(--grn-dim); }
+    .dz input[type="file"] {
+      position: absolute; inset: 0; opacity: 0;
+      cursor: pointer; width: 100%; height: 100%;
+    }
+    i.dz-ic { font-size: 28px; color: var(--ink3); display: block; margin-bottom: 10px; transition: color 0.18s; }
+    .dz:hover i.dz-ic, .dz.ov i.dz-ic { color: var(--acc); }
+    .dz.has i.dz-ic { color: var(--grn); }
+    .dz-main { font-size: 13px; font-weight: 600; color: var(--ink2); }
+    .dz.has .dz-main { color: var(--grn); }
+    .dz-sub { font-size: 11.5px; color: var(--ink3); margin-top: 4px; }
+ 
+    /* ── SEPARATOR ── */
+    .or { display: flex; align-items: center; gap: 12px; margin: 18px 0; }
+    .or-l { flex: 1; height: 1px; background: var(--bdr); }
+    .or-t { font-size: 11px; font-weight: 600; color: var(--ink3); letter-spacing: 0.05em; }
+ 
+    /* ── INPUTS ── */
+    textarea, input[type="password"], input[type="text"] {
+      width: 100%;
+      font-family: var(--mono);
+      border: 1px solid var(--bdr); border-radius: 11px;
+      background: var(--s2); color: var(--ink); outline: none;
+      transition: border-color 0.15s, background 0.15s;
+    }
     textarea {
-      width: 100%; padding: 12px 14px; font-size: 13px;
-      font-family: var(--mono); border: 1px solid var(--border);
-      border-radius: 12px; background: var(--surface2);
-      color: var(--text); resize: none; line-height: 1.6; outline: none;
-      transition: border-color 0.14s, background 0.14s;
+      padding: 13px 14px; font-size: 13px;
+      line-height: 1.65; resize: none;
     }
-    textarea:focus { border-color: var(--border-mid); background: var(--surface); }
-    textarea::placeholder { color: var(--hint); }
-
-    /* Key */
-    .key-wrap { position: relative; }
-    .key-wrap input {
-      width: 100%; padding: 11px 44px 11px 14px; font-size: 14px;
-      border: 1px solid var(--border); border-radius: 12px;
-      background: var(--surface2); color: var(--text);
-      font-family: 'Inter', sans-serif; outline: none; letter-spacing: 0.04em;
-      transition: border-color 0.14s, background 0.14s;
+    textarea::placeholder { color: var(--ink3); }
+    textarea:focus { border-color: var(--acc); background: var(--s3); }
+ 
+    .kw { position: relative; }
+    .kw input {
+      padding: 12px 44px 12px 14px; font-size: 14px;
+      font-family: var(--fi); letter-spacing: 0.03em;
     }
-    .key-wrap input:focus { border-color: var(--border-mid); background: var(--surface); }
-    .key-wrap input::placeholder { color: var(--hint); letter-spacing: 0; }
-    .eye-btn {
+    .kw input::placeholder { color: var(--ink3); letter-spacing: 0; font-family: var(--fi); }
+    .kw input:focus { border-color: var(--acc); background: var(--s3); }
+    .eye {
       position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
-      background: none; border: none; cursor: pointer; color: var(--hint);
-      font-size: 17px; display: flex; align-items: center;
-      transition: color 0.14s;
+      background: none; border: none; cursor: pointer; color: var(--ink3);
+      font-size: 19px; display: flex; align-items: center;
+      transition: color 0.15s;
     }
-    .eye-btn:hover { color: var(--muted); }
-
-    /* Buttons */
-    .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .eye:hover { color: var(--acc2); }
+ 
+    /* ── BUTTONS ── */
+    .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
     .btn {
-      padding: 12px 16px; border-radius: 12px; font-size: 13px; font-weight: 600;
-      cursor: pointer; font-family: 'Inter', sans-serif;
-      display: flex; align-items: center; justify-content: center; gap: 7px;
-      transition: background 0.14s, border-color 0.14s, transform 0.1s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 13px; border-radius: 12px;
+      font-size: 13.5px; font-weight: 700; font-family: var(--fi);
+      cursor: pointer; letter-spacing: 0.01em;
+      transition: all 0.15s;
     }
-    .btn:active { transform: scale(0.98); }
-    .btn:disabled { opacity: 0.32; cursor: not-allowed; transform: none; }
-    .btn i { font-size: 15px; }
-    .btn-lock { background: var(--ink); color: var(--ink-inv); border: 1px solid var(--ink); }
-    .btn-lock:hover:not(:disabled) { background: #2e2d2a; }
-    .btn-unlock { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
-    .btn-unlock:hover:not(:disabled) { background: var(--hover); border-color: var(--border-mid); }
-
-    /* Output */
-    .output-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-    .output-tools { display: flex; gap: 6px; align-items: center; }
-    .badge {
-      display: inline-flex; align-items: center; gap: 4px;
-      font-size: 10px; font-weight: 700; letter-spacing: 0.07em;
-      text-transform: uppercase; padding: 3px 9px; border-radius: 20px;
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.28; cursor: not-allowed; transform: none; }
+    .btn i { font-size: 16px; }
+    .btn-fill { background: var(--acc); color: #fff; border: 1px solid var(--acc); }
+    .btn-fill:hover:not(:disabled) { background: #9488FF; }
+    .btn-out { background: transparent; color: var(--ink2); border: 1px solid var(--bdr2); }
+    .btn-out:hover:not(:disabled) { background: var(--s3); border-color: var(--acc); color: var(--acc2); }
+ 
+    /* ── OUTPUT ── */
+    .out-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .bdg {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 10.5px; font-weight: 700; letter-spacing: 0.07em;
+      text-transform: uppercase; padding: 4px 10px; border-radius: 20px;
     }
-    .badge i { font-size: 10px; }
-    .badge-enc { background: var(--purple-bg); color: var(--purple-txt); }
-    .badge-dec { background: var(--green-bg); color: var(--green-txt); }
-    .tool-btn {
-      background: none; border: 1px solid var(--border); border-radius: 8px;
-      padding: 4px 10px; font-size: 11.5px; cursor: pointer; color: var(--muted);
-      display: flex; align-items: center; gap: 4px;
-      font-family: 'Inter', sans-serif; font-weight: 500;
-      transition: all 0.14s;
+    .bdg i { font-size: 11px; }
+    .bdg-enc { background: var(--acc-dim); color: var(--acc2); border: 1px solid var(--acc); }
+    .bdg-dec { background: var(--grn-dim); color: var(--grn); border: 1px solid var(--grn); }
+    .icon-btn {
+      display: flex; align-items: center; gap: 5px;
+      background: none; border: 1px solid var(--bdr2); border-radius: 8px;
+      padding: 5px 12px; font-size: 12px; font-weight: 600; font-family: var(--fi);
+      color: var(--ink2); cursor: pointer; transition: all 0.15s;
     }
-    .tool-btn:hover { background: var(--hover); border-color: var(--border-mid); color: var(--text); }
-    .tool-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-    .tool-btn i { font-size: 13px; }
-    .output-box {
-      background: var(--surface2); border: 1px solid var(--border); border-radius: 12px;
-      padding: 14px; font-family: var(--mono); font-size: 12.5px;
-      color: var(--text); line-height: 1.65;
-      white-space: pre-wrap; word-break: break-all; min-height: 100px;
+    .icon-btn:hover { border-color: var(--acc); color: var(--acc2); background: var(--acc-dim); }
+    .icon-btn:disabled { opacity: 0.28; cursor: not-allowed; }
+    .icon-btn i { font-size: 13px; }
+    .out-box {
+      background: var(--s2); border: 1px solid var(--bdr); border-radius: 12px;
+      padding: 16px; font-family: var(--mono); font-size: 12.5px;
+      color: var(--ink); line-height: 1.7;
+      white-space: pre-wrap; word-break: break-all; min-height: 180px;
     }
-    .output-placeholder { color: var(--hint); font-style: italic; font-family: 'Inter', sans-serif; }
+    .out-ph { color: var(--ink3); font-style: italic; font-family: var(--fi); font-size: 13px; }
     .dl-btn {
-      width: 100%; margin-top: 8px; padding: 10px;
-      border: 1px solid var(--border); border-radius: 12px;
-      background: none; font-size: 12.5px; cursor: pointer; color: var(--muted);
-      display: flex; align-items: center; justify-content: center; gap: 6px;
-      font-family: 'Inter', sans-serif; font-weight: 500;
-      transition: all 0.14s;
+      width: 100%; margin-top: 10px; padding: 11px;
+      border: 1px solid var(--bdr); border-radius: 12px;
+      background: none; font-size: 12.5px; font-weight: 600; font-family: var(--fi);
+      color: var(--ink2); display: flex; align-items: center; justify-content: center; gap: 7px;
+      cursor: pointer; transition: all 0.15s;
     }
-    .dl-btn:hover:not(:disabled) { background: var(--hover); border-color: var(--border-mid); color: var(--text); }
-    .dl-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-    .dl-btn i { font-size: 14px; }
-
-    /* Toast */
-    .toast-wrap { position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%); pointer-events: none; z-index: 999; }
+    .dl-btn:hover:not(:disabled) { background: var(--s3); border-color: var(--bdr2); color: var(--ink); }
+    .dl-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+    .dl-btn i { font-size: 15px; }
+ 
+    /* ── QUICK GUIDE ── */
+    .guide-step { display: flex; gap: 12px; align-items: flex-start; }
+    .guide-num {
+      width: 24px; height: 24px; flex-shrink: 0;
+      background: var(--acc-dim); border: 1px solid var(--acc);
+      border-radius: 7px; display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 800; color: var(--acc2);
+    }
+    .guide-title { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 2px; }
+    .guide-desc { font-size: 12px; color: var(--ink2); }
+ 
+    /* ── ABOUT HERO ── */
+    .about-hero {
+      background: var(--s1); border-bottom: 1px solid var(--bdr);
+      padding: 56px 40px 52px;
+    }
+    .about-hero-inner { max-width: 720px; margin: 0 auto; }
+    .about-tag {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: var(--acc-dim); border: 1px solid var(--acc);
+      border-radius: 20px; padding: 5px 14px; margin-bottom: 20px;
+    }
+    .about-tag i { font-size: 13px; color: var(--acc2); }
+    .about-tag span {
+      font-size: 11.5px; font-weight: 700;
+      letter-spacing: 0.07em; text-transform: uppercase; color: var(--acc2);
+    }
+    .about-hero h1 {
+      font-family: var(--fs); font-size: 44px; font-weight: 800;
+      letter-spacing: -0.04em; color: var(--ink);
+      margin-bottom: 14px; line-height: 1.1;
+    }
+    .about-hero p { font-size: 15px; color: var(--ink2); line-height: 1.75; max-width: 580px; }
+ 
+    /* ── ABOUT CONTENT ── */
+    .about-wrap { max-width: 760px; margin: 0 auto; padding: 44px 40px 80px; }
+    .sec { margin-bottom: 44px; }
+    .sec-title {
+      font-family: var(--fs); font-size: 20px; font-weight: 800;
+      color: var(--ink); letter-spacing: -0.03em; margin-bottom: 6px;
+    }
+    .sec-rule { height: 1px; background: var(--bdr); margin-bottom: 18px; }
+    .sec p { font-size: 14px; color: var(--ink2); line-height: 1.8; margin-bottom: 12px; }
+    .sec p:last-child { margin-bottom: 0; }
+ 
+    .steps-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .step {
+      background: var(--s1); border: 1px solid var(--bdr);
+      border-radius: 16px; padding: 22px;
+    }
+    .step-n {
+      width: 30px; height: 30px; background: var(--acc); border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 800; font-family: var(--fs); color: #fff;
+      margin-bottom: 14px;
+    }
+    .step h3 {
+      font-family: var(--fs); font-size: 14px; font-weight: 800;
+      color: var(--ink); margin-bottom: 7px; letter-spacing: -0.01em;
+    }
+    .step p { font-size: 12.5px; color: var(--ink2); line-height: 1.65; margin: 0; }
+ 
+    .fml { background: var(--s1); border: 1px solid var(--bdr); border-radius: 16px; overflow: hidden; }
+    .fml-row {
+      display: flex; align-items: center; gap: 20px;
+      padding: 16px 22px; border-bottom: 1px solid var(--bdr);
+    }
+    .fml-row:last-child { border-bottom: none; }
+    .fml-lbl {
+      font-size: 10.5px; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--ink3); width: 72px; flex-shrink: 0;
+    }
+    .fml-eq { font-family: var(--mono); font-size: 14px; color: var(--acc2); flex: 1; }
+    .fml-note { font-size: 11.5px; color: var(--ink3); text-align: right; }
+ 
+    .props-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .prop { background: var(--s1); border: 1px solid var(--bdr); border-radius: 16px; padding: 20px; }
+    .prop-ic {
+      width: 36px; height: 36px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 14px; font-size: 18px;
+    }
+    .prop-ic.p { background: var(--acc-dim); color: var(--acc2); }
+    .prop-ic.g { background: var(--grn-dim); color: var(--grn); }
+    .prop h3 {
+      font-family: var(--fs); font-size: 13.5px; font-weight: 800;
+      color: var(--ink); margin-bottom: 6px; letter-spacing: -0.01em;
+    }
+    .prop p { font-size: 12.5px; color: var(--ink2); line-height: 1.65; }
+ 
+    .cta {
+      background: var(--s1); border: 1px solid var(--acc); border-radius: 20px;
+      padding: 32px; display: flex; align-items: center;
+      justify-content: space-between; gap: 20px; flex-wrap: wrap;
+    }
+    .cta h3 {
+      font-family: var(--fs); font-size: 22px; font-weight: 800;
+      color: var(--ink); letter-spacing: -0.03em; margin-bottom: 6px;
+    }
+    .cta p { font-size: 14px; color: var(--ink2); }
+    .cta-btn {
+      background: var(--acc); color: #fff;
+      border: none; padding: 13px 26px; border-radius: 12px;
+      font-size: 14px; font-weight: 700; font-family: var(--fi);
+      cursor: pointer; white-space: nowrap; flex-shrink: 0;
+      display: flex; align-items: center; gap: 8px;
+      transition: background 0.15s;
+    }
+    .cta-btn:hover { background: #9488FF; }
+    .cta-btn i { font-size: 16px; }
+ 
+    /* ── TOAST ── */
+    .toast-h {
+      position: fixed; bottom: 28px; left: 50%;
+      transform: translateX(-50%); pointer-events: none; z-index: 999;
+    }
     .toast {
-      background: var(--ink); color: var(--ink-inv);
-      padding: 10px 18px; border-radius: 10px;
-      font-size: 12.5px; font-weight: 500;
-      display: flex; align-items: center; gap: 8px; white-space: nowrap;
-      opacity: 0; transform: translateY(6px);
+      background: var(--s3); border: 1px solid var(--bdr2);
+      color: var(--ink); padding: 11px 20px; border-radius: 12px;
+      font-size: 13px; font-weight: 600; font-family: var(--fi);
+      display: flex; align-items: center; gap: 9px; white-space: nowrap;
+      opacity: 0; transform: translateY(8px);
       transition: opacity 0.2s, transform 0.2s;
     }
-    .toast.show { opacity: 1; transform: translateY(0); }
-    .toast.error { background: #7f1d1d; color: #fee2e2; }
-    .toast i { font-size: 14px; }
-
-    @media (max-width: 540px) {
-      .shell { padding: 32px 16px 80px; }
-      .panel-header, .panel-body { padding-left: 20px; padding-right: 20px; }
-      .actions { grid-template-columns: 1fr; }
-      .wordmark { margin-bottom: 32px; }
+    .toast.on { opacity: 1; transform: translateY(0); }
+    .toast.err { border-color: #7F1D1D; background: #2D0D0D; color: #FCA5A5; }
+    .toast i { font-size: 15px; color: var(--grn); }
+    .toast.err i { color: #FCA5A5; }
+ 
+    /* ── RESPONSIVE ── */
+    @media (max-width: 760px) {
+      nav { padding: 0 16px; }
+      .hero, .about-hero { padding: 36px 20px 32px; }
+      .tool-wrap, .about-wrap { padding: 24px 16px 64px; }
+      .tool-grid { grid-template-columns: 1fr; }
+      .hero h1, .about-hero h1 { font-size: 32px; }
+      .hero-stats { flex-direction: row; flex-wrap: wrap; }
+      .stat-pill { min-width: unset; flex: 1 1 140px; }
+      .steps-row { grid-template-columns: 1fr; }
+      .props-grid { grid-template-columns: 1fr; }
+      .fml-note { display: none; }
+      .cta { flex-direction: column; align-items: flex-start; }
+      .tab span { display: none; }
+      .tab { padding: 7px 12px; }
+    }
+    @media (max-width: 420px) {
+      .brand-name { display: none; }
+      .hero h1 { font-size: 26px; }
     }
   </style>
 </head>
 <body>
-
-<div class="shell">
-
-  <div class="wordmark">
-    <div class="wm-icon"><i class="ti ti-lock" aria-hidden="true"></i></div>
-    <span class="wm-text">Secure File Locker</span>
+ 
+<!-- ══ NAV ══ -->
+<nav>
+  <div class="brand">
+    <div class="brand-icon"><i class="ti ti-lock-bolt" aria-hidden="true"></i></div>
+    <span class="brand-name">CryptoLock</span>
   </div>
-
-  <main class="panel" aria-label="Secure File Locker">
-    <div class="panel-header">
-      <h1 class="panel-title">Encrypt or decrypt</h1>
-      <p class="panel-sub">Upload a .txt file or paste text, enter a key, then lock or unlock.</p>
+  <div class="nav-tabs">
+    <button class="tab on" id="t1" onclick="gp('tool')">
+      <i class="ti ti-lock"></i><span>Encrypt / Decrypt</span>
+    </button>
+    <button class="tab" id="t2" onclick="gp('about')">
+      <i class="ti ti-book"></i><span>About the Cipher</span>
+    </button>
+  </div>
+</nav>
+ 
+ 
+<!-- ══════════════════════════════
+     PAGE 1 — ENCRYPT / DECRYPT
+════════════════════════════════ -->
+<div class="pg on" id="pTool">
+ 
+  <div class="hero">
+    <div class="hero-inner">
+      <div class="hero-left">
+        <div class="hero-pill">
+          <i class="ti ti-shield-lock" aria-hidden="true"></i>
+          <span>Vigenère Cipher</span>
+        </div>
+        <h1>Encrypt anything.<br><em>In seconds.</em></h1>
+        <p class="hero-sub">Upload a text file or paste your content, enter a secret keyword, and lock or unlock your message — all processed right here in your browser. Nothing leaves your device.</p>
+      </div>
+      <div class="hero-stats">
+        <div class="stat-pill acc">
+          <div class="sv">100%</div>
+          <div class="sl">Client-side · zero uploads</div>
+        </div>
+        <div class="stat-pill">
+          <div class="sv">26<sup style="font-size:13px;vertical-align:super">n</sup></div>
+          <div class="sl">Possible key combinations</div>
+        </div>
+        <div class="stat-pill">
+          <div class="sv">16th C</div>
+          <div class="sl">Origin · Blaise de Vigenère</div>
+        </div>
+      </div>
     </div>
-
-    <div class="panel-body">
-
-      <div class="fg">
-        <span class="fl">File</span>
-        <div class="drop-zone" id="dropZone">
-          <input type="file" id="fileInput" accept=".txt" aria-label="Upload a .txt file" />
-          <i class="ti ti-file-text dz-icon" id="dzIcon" aria-hidden="true"></i>
-          <p class="dz-main" id="dzMain">Drop a .txt file, or click to browse</p>
-          <p class="dz-sub" id="dzSub">Accepts .txt files only</p>
+  </div>
+ 
+  <div class="tool-wrap">
+    <div class="tool-grid">
+ 
+      <!-- LEFT: Input + Key -->
+      <div class="col">
+ 
+        <div class="card">
+          <p class="section-label">Input</p>
+          <div class="dz" id="dz">
+            <input type="file" id="fi" accept=".txt" aria-label="Upload .txt file" />
+            <i class="ti ti-cloud-upload dz-ic" id="dzIc" aria-hidden="true"></i>
+            <p class="dz-main" id="dzM">Drop a .txt file, or click to browse</p>
+            <p class="dz-sub" id="dzS">.txt only — never leaves your device</p>
+          </div>
+          <div class="or">
+            <div class="or-l"></div>
+            <span class="or-t">or type / paste</span>
+            <div class="or-l"></div>
+          </div>
+          <textarea id="ta" rows="6" placeholder="Paste plaintext or ciphertext here…" aria-label="Text to encrypt or decrypt"></textarea>
         </div>
-      </div>
-
-      <div class="sep">
-        <div class="sep-line"></div>
-        <span class="sep-text">or paste text</span>
-        <div class="sep-line"></div>
-      </div>
-
-      <div class="fg">
-        <textarea id="pasteArea" rows="4" placeholder="Paste plaintext or ciphertext here…" aria-label="Text to encrypt or decrypt"></textarea>
-      </div>
-
-      <div class="fg">
-        <span class="fl">Key</span>
-        <div class="key-wrap">
-          <input type="password" id="keyInput" placeholder="Enter keyword — letters only" autocomplete="off" aria-label="Vigenère cipher key" />
-          <button class="eye-btn" id="toggleKey" aria-label="Toggle key visibility">
-            <i class="ti ti-eye" id="eyeIcon"></i>
-          </button>
-        </div>
-      </div>
-
-      <div class="fg">
-        <div class="actions">
-          <button class="btn btn-lock" id="encBtn" disabled>
-            <i class="ti ti-lock"></i> Lock
-          </button>
-          <button class="btn btn-unlock" id="decBtn" disabled>
-            <i class="ti ti-lock-open"></i> Unlock
-          </button>
-        </div>
-      </div>
-
-      <div class="fg">
-        <div class="output-bar">
-          <span class="fl" style="margin:0">Output</span>
-          <div class="output-tools">
-            <span id="modeBadge" style="display:none"></span>
-            <button class="tool-btn" id="copyBtn" disabled aria-label="Copy output">
-              <i class="ti ti-copy"></i> Copy
+ 
+        <div class="card">
+          <p class="section-label">Secret key</p>
+          <div class="kw">
+            <input type="password" id="ki" placeholder="Enter keyword — letters only" autocomplete="off" aria-label="Vigenère cipher key" />
+            <button class="eye" id="eyeB" aria-label="Toggle key visibility">
+              <i class="ti ti-eye" id="eyeI"></i>
+            </button>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-fill" id="encB" disabled>
+              <i class="ti ti-lock"></i> Lock it
+            </button>
+            <button class="btn btn-out" id="decB" disabled>
+              <i class="ti ti-lock-open"></i> Unlock it
             </button>
           </div>
         </div>
-        <div class="output-box" id="preview" role="region" aria-label="Cipher output">
-          <span class="output-placeholder" id="placeholder">Result appears here.</span>
-        </div>
-        <button class="dl-btn" id="dlBtn" disabled aria-label="Download output as .txt">
-          <i class="ti ti-download"></i> Download .txt
-        </button>
+ 
       </div>
-
+ 
+      <!-- RIGHT: Output + Guide -->
+      <div class="col">
+ 
+        <div class="card card-accent">
+          <div class="out-hd">
+            <p class="section-label" style="margin:0">Output</p>
+            <div style="display:flex;gap:6px;align-items:center">
+              <span id="bdg" style="display:none"></span>
+              <button class="icon-btn" id="cpB" disabled aria-label="Copy output">
+                <i class="ti ti-copy"></i> Copy
+              </button>
+            </div>
+          </div>
+          <div class="out-box" id="ob" role="region" aria-label="Cipher output">
+            <span class="out-ph" id="ph">Your encrypted or decrypted text will appear here.</span>
+          </div>
+          <button class="dl-btn" id="dlB" disabled aria-label="Download output as .txt">
+            <i class="ti ti-download"></i> Download as .txt
+          </button>
+        </div>
+ 
+        <div class="card" style="background:var(--s2)">
+          <p class="section-label">Quick guide</p>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div class="guide-step">
+              <div class="guide-num">1</div>
+              <div>
+                <p class="guide-title">Upload or paste text</p>
+                <p class="guide-desc">Drop a .txt file into the zone, or paste directly into the textarea.</p>
+              </div>
+            </div>
+            <div class="guide-step">
+              <div class="guide-num">2</div>
+              <div>
+                <p class="guide-title">Enter your keyword</p>
+                <p class="guide-desc">Choose any word using only letters. Longer keywords are stronger.</p>
+              </div>
+            </div>
+            <div class="guide-step">
+              <div class="guide-num">3</div>
+              <div>
+                <p class="guide-title">Lock or Unlock</p>
+                <p class="guide-desc">Hit Lock to encrypt, Unlock to decrypt. Copy or download the result.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+ 
+      </div>
     </div>
-  </main>
-
-</div>
-
-<div class="toast-wrap">
-  <div class="toast" id="toast" role="alert" aria-live="polite">
-    <i class="ti ti-check" id="toastIcon"></i>
-    <span id="toastMsg"></span>
   </div>
 </div>
-
+ 
+ 
+<!-- ══════════════════════════════
+     PAGE 2 — ABOUT THE CIPHER
+════════════════════════════════ -->
+<div class="pg" id="pAbout">
+ 
+  <div class="about-hero">
+    <div class="about-hero-inner">
+      <div class="about-tag">
+        <i class="ti ti-history" aria-hidden="true"></i>
+        <span>History &amp; Theory</span>
+      </div>
+      <h1>The Vigenère<br>Cipher</h1>
+      <p>First described by Giovan Battista Bellaso in 1553 and later misattributed to Blaise de Vigenère, this polyalphabetic cipher was considered unbreakable for over three centuries — earning it the name <em>"le chiffre indéchiffrable."</em></p>
+    </div>
+  </div>
+ 
+  <div class="about-wrap">
+ 
+    <div class="sec">
+      <h2 class="sec-title">What is it?</h2>
+      <div class="sec-rule"></div>
+      <p>The Vigenère cipher is a method of encrypting text by applying a series of different Caesar ciphers, based on the letters of a repeating keyword. Unlike the Caesar cipher — which shifts every letter by a single fixed number — the Vigenère cipher shifts each letter by a different amount, making it far more resistant to basic analysis.</p>
+      <p>Each letter of the keyword maps to a shift value (A = 0, B = 1, … Z = 25). The keyword repeats along the entire message, pairing each plaintext character with a key character that defines how far to shift it.</p>
+    </div>
+ 
+    <div class="sec">
+      <h2 class="sec-title">Step-by-step breakdown</h2>
+      <div class="sec-rule"></div>
+      <div class="steps-row">
+        <div class="step">
+          <div class="step-n">1</div>
+          <h3>Map letters to numbers</h3>
+          <p>Convert each letter to a value: A = 0, B = 1 … Z = 25. Non-letters (spaces, punctuation, digits) are kept unchanged.</p>
+        </div>
+        <div class="step">
+          <div class="step-n">2</div>
+          <h3>Repeat the keyword</h3>
+          <p>Cycle your keyword over the full message so every plaintext letter has a matching key letter aligned beneath it.</p>
+        </div>
+        <div class="step">
+          <div class="step-n">3</div>
+          <h3>Shift and wrap at 26</h3>
+          <p>Add (encrypt) or subtract (decrypt) the key value from the letter value. If the result goes outside 0–25, wrap it using modulo 26.</p>
+        </div>
+      </div>
+    </div>
+ 
+    <div class="sec">
+      <h2 class="sec-title">The formulas</h2>
+      <div class="sec-rule"></div>
+      <div class="fml">
+        <div class="fml-row">
+          <span class="fml-lbl">Encrypt</span>
+          <span class="fml-eq">E(i) = ( P(i) + K(i) ) mod 26</span>
+          <span class="fml-note">Add key shift, wrap at 26</span>
+        </div>
+        <div class="fml-row">
+          <span class="fml-lbl">Decrypt</span>
+          <span class="fml-eq">D(i) = ( C(i) &minus; K(i) + 26 ) mod 26</span>
+          <span class="fml-note">Subtract shift, wrap at 26</span>
+        </div>
+      </div>
+      <p style="font-size:12.5px;color:var(--ink3);margin-top:10px">
+        P = plaintext value &nbsp;&bull;&nbsp; C = ciphertext value &nbsp;&bull;&nbsp; K = key value &nbsp;&bull;&nbsp; all in range 0–25
+      </p>
+    </div>
+ 
+    <div class="sec">
+      <h2 class="sec-title">Strengths and limitations</h2>
+      <div class="sec-rule"></div>
+      <div class="props-grid">
+        <div class="prop">
+          <div class="prop-ic p"><i class="ti ti-shield-check" aria-hidden="true"></i></div>
+          <h3>Beats frequency analysis</h3>
+          <p>The shifting key means each letter is encoded differently every time it appears, hiding the letter-frequency patterns that break simple Caesar ciphers.</p>
+        </div>
+        <div class="prop">
+          <div class="prop-ic g"><i class="ti ti-key" aria-hidden="true"></i></div>
+          <h3>Symmetric encryption</h3>
+          <p>The same keyword encrypts and decrypts. Both parties must share the key in advance through a secure, separate channel.</p>
+        </div>
+        <div class="prop">
+          <div class="prop-ic p"><i class="ti ti-chart-line" aria-hidden="true"></i></div>
+          <h3>Key length matters</h3>
+          <p>A longer keyword reduces periodicity, making statistical attacks significantly harder. A key as long as the message (used once) becomes a one-time pad.</p>
+        </div>
+        <div class="prop">
+          <div class="prop-ic g"><i class="ti ti-alert-triangle" aria-hidden="true"></i></div>
+          <h3>Not modern-secure</h3>
+          <p>The Kasiski examination can recover short repeating key lengths, breaking the cipher. It is not suitable for real-world security applications today.</p>
+        </div>
+      </div>
+    </div>
+ 
+    <div class="sec">
+      <div class="cta">
+        <div>
+          <h3>Try it yourself</h3>
+          <p>Head to the Encrypt / Decrypt tab and lock your first message.</p>
+        </div>
+        <button class="cta-btn" onclick="gp('tool')">
+          <i class="ti ti-lock"></i> Open the tool
+        </button>
+      </div>
+    </div>
+ 
+  </div>
+</div>
+ 
+ 
+<!-- Toast notification -->
+<div class="toast-h">
+  <div class="toast" id="toast" role="alert" aria-live="polite">
+    <i class="ti ti-check" id="tIc"></i>
+    <span id="tTx"></span>
+  </div>
+</div>
+ 
+ 
 <script>
-  let fileText = '', outputText = '', keyVisible = false;
-  const $ = id => document.getElementById(id);
-  const pasteArea=$('pasteArea'), keyInput=$('keyInput'), encBtn=$('encBtn'), decBtn=$('decBtn');
-  const preview=$('preview'), placeholder=$('placeholder'), copyBtn=$('copyBtn'), dlBtn=$('dlBtn');
-  const dropZone=$('dropZone'), fileInput=$('fileInput'), dzIcon=$('dzIcon'), dzMain=$('dzMain'), dzSub=$('dzSub');
-  const modeBadge=$('modeBadge'), toggleKey=$('toggleKey'), eyeIcon=$('eyeIcon');
-  const toast=$('toast'), toastMsg=$('toastMsg'), toastIcon=$('toastIcon');
-
-  function checkReady() {
-    const hasText = pasteArea.value.trim().length > 0 || fileText.length > 0;
-    const hasKey = keyInput.value.replace(/[^a-zA-Z]/g, '').length > 0;
-    encBtn.disabled = decBtn.disabled = !(hasText && hasKey);
+  /* ── State ── */
+  var fTxt  = '';
+  var out   = '';
+  var eyeOn = false;
+ 
+  /* ── Elements ── */
+  var dz   = document.getElementById('dz');
+  var fi   = document.getElementById('fi');
+  var dzIc = document.getElementById('dzIc');
+  var dzM  = document.getElementById('dzM');
+  var dzS  = document.getElementById('dzS');
+  var ta   = document.getElementById('ta');
+  var ki   = document.getElementById('ki');
+  var eyeB = document.getElementById('eyeB');
+  var eyeI = document.getElementById('eyeI');
+  var encB = document.getElementById('encB');
+  var decB = document.getElementById('decB');
+  var ob   = document.getElementById('ob');
+  var ph   = document.getElementById('ph');
+  var bdg  = document.getElementById('bdg');
+  var cpB  = document.getElementById('cpB');
+  var dlB  = document.getElementById('dlB');
+  var toast = document.getElementById('toast');
+  var tIc  = document.getElementById('tIc');
+  var tTx  = document.getElementById('tTx');
+ 
+  /* ── Page switch ── */
+  function gp(name) {
+    document.getElementById('pTool').classList.toggle('on',  name === 'tool');
+    document.getElementById('pAbout').classList.toggle('on', name === 'about');
+    document.getElementById('t1').classList.toggle('on', name === 'tool');
+    document.getElementById('t2').classList.toggle('on', name === 'about');
   }
-  function showToast(msg, err = false) {
-    toastMsg.textContent = msg;
-    toast.className = 'toast' + (err ? ' error' : '');
-    toastIcon.className = err ? 'ti ti-x' : 'ti ti-check';
-    toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 2600);
+ 
+  /* ── Button state ── */
+  function rdy() {
+    var hasText = ta.value.trim().length > 0 || fTxt.length > 0;
+    var hasKey  = ki.value.replace(/[^a-zA-Z]/g, '').length > 0;
+    encB.disabled = decB.disabled = !(hasText && hasKey);
   }
-  function setOutput(text, mode) {
-    outputText = text;
-    placeholder.style.display = 'none';
-    preview.textContent = text.slice(0, 6000) + (text.length > 6000 ? '\n…(truncated for preview)' : '');
-    copyBtn.disabled = dlBtn.disabled = false;
-    modeBadge.style.display = 'inline-flex';
-    modeBadge.className = 'badge ' + (mode === 'enc' ? 'badge-enc' : 'badge-dec');
-    modeBadge.innerHTML = mode === 'enc'
+ 
+  /* ── Toast ── */
+  function shT(msg, isErr) {
+    tTx.textContent = msg;
+    toast.className = 'toast' + (isErr ? ' err' : '');
+    tIc.className   = isErr ? 'ti ti-x' : 'ti ti-check';
+    toast.classList.add('on');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function () { toast.classList.remove('on'); }, 2700);
+  }
+ 
+  /* ── Show output ── */
+  function setOut(text, mode) {
+    out = text;
+    ph.style.display = 'none';
+    ob.textContent   = text.slice(0, 8000) + (text.length > 8000 ? '\n…(truncated for preview)' : '');
+    cpB.disabled = dlB.disabled = false;
+    bdg.style.display = 'inline-flex';
+    bdg.className     = 'bdg ' + (mode === 'enc' ? 'bdg-enc' : 'bdg-dec');
+    bdg.innerHTML     = mode === 'enc'
       ? '<i class="ti ti-lock"></i>Encrypted'
       : '<i class="ti ti-lock-open"></i>Decrypted';
   }
-  function vigenere(text, key, enc) {
-    const k = key.toUpperCase().replace(/[^A-Z]/g, '');
+ 
+  /* ── Vigenère algorithm ── */
+  function vig(text, key, encrypt) {
+    var k = key.toUpperCase().replace(/[^A-Z]/g, '');
     if (!k.length) return text;
-    let ki = 0;
-    return text.split('').map(ch => {
+ 
+    var j      = 0;
+    var result = '';
+ 
+    for (var i = 0; i < text.length; i++) {
+      var ch = text[i];
+ 
       if (/[a-zA-Z]/.test(ch)) {
-        const up = ch === ch.toUpperCase(), base = up ? 65 : 97;
-        const shift = k.charCodeAt(ki % k.length) - 65;
-        const code = ch.toUpperCase().charCodeAt(0) - 65;
-        const r = enc ? (code + shift) % 26 : (code - shift + 26) % 26;
-        ki++;
-        return String.fromCharCode(r + base);
+        var isUpper  = (ch === ch.toUpperCase());
+        var base     = isUpper ? 65 : 97;
+        var shift    = k.charCodeAt(j % k.length) - 65;
+        var code     = ch.toUpperCase().charCodeAt(0) - 65;
+        var shifted  = encrypt
+          ? (code + shift) % 26
+          : (code - shift + 26) % 26;
+ 
+        result += String.fromCharCode(shifted + base);
+        j++;
+      } else {
+        result += ch;
       }
-      return ch;
-    }).join('');
+    }
+ 
+    return result;
   }
-  function loadFile(f) {
+ 
+  /* ── File loader ── */
+  function loadF(f) {
     if (!f) return;
-    if (!f.name.endsWith('.txt')) { showToast('Please upload a .txt file', true); return; }
-    const r = new FileReader();
-    r.onload = ev => {
-      fileText = ev.target.result;
-      pasteArea.value = fileText.slice(0, 3000) + (fileText.length > 3000 ? '…' : '');
-      dropZone.classList.add('has-file');
-      dzIcon.className = 'ti ti-file-check dz-icon';
-      dzMain.textContent = f.name;
-      dzSub.textContent = (f.size / 1024).toFixed(1) + ' KB';
-      checkReady();
+    if (!f.name.endsWith('.txt')) { shT('Please upload a .txt file', true); return; }
+ 
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      fTxt = e.target.result;
+      ta.value = fTxt.slice(0, 4000) + (fTxt.length > 4000 ? '…' : '');
+      dz.classList.add('has');
+      dzIc.className  = 'ti ti-file-check dz-ic';
+      dzM.textContent = f.name;
+      dzS.textContent = (f.size / 1024).toFixed(1) + ' KB';
+      rdy();
     };
-    r.readAsText(f);
+    reader.readAsText(f);
   }
-  fileInput.addEventListener('change', e => loadFile(e.target.files[0]));
-  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragging'); });
-  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragging'));
-  dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragging'); loadFile(e.dataTransfer.files[0]); });
-  pasteArea.addEventListener('input', () => { fileText = ''; checkReady(); });
-  keyInput.addEventListener('input', checkReady);
-  toggleKey.addEventListener('click', () => {
-    keyVisible = !keyVisible;
-    keyInput.type = keyVisible ? 'text' : 'password';
-    eyeIcon.className = keyVisible ? 'ti ti-eye-off' : 'ti ti-eye';
+ 
+  /* ── Event listeners ── */
+  fi.addEventListener('change',   function (e) { loadF(e.target.files[0]); });
+ 
+  dz.addEventListener('dragover', function (e) { e.preventDefault(); dz.classList.add('ov'); });
+  dz.addEventListener('dragleave',function ()  { dz.classList.remove('ov'); });
+  dz.addEventListener('drop',     function (e) {
+    e.preventDefault(); dz.classList.remove('ov'); loadF(e.dataTransfer.files[0]);
   });
-  encBtn.addEventListener('click', () => {
-    const t = fileText || pasteArea.value, k = keyInput.value;
-    if (!k.replace(/[^a-zA-Z]/g, '').length) { showToast('Key must contain letters', true); return; }
-    setOutput(vigenere(t, k, true), 'enc');
-    showToast('Encrypted successfully');
+ 
+  ta.addEventListener('input',  function () { fTxt = ''; rdy(); });
+  ki.addEventListener('input',  rdy);
+ 
+  eyeB.addEventListener('click', function () {
+    eyeOn      = !eyeOn;
+    ki.type    = eyeOn ? 'text' : 'password';
+    eyeI.className = eyeOn ? 'ti ti-eye-off' : 'ti ti-eye';
   });
-  decBtn.addEventListener('click', () => {
-    const t = fileText || pasteArea.value, k = keyInput.value;
-    if (!k.replace(/[^a-zA-Z]/g, '').length) { showToast('Key must contain letters', true); return; }
-    setOutput(vigenere(t, k, false), 'dec');
-    showToast('Decrypted successfully');
+ 
+  encB.addEventListener('click', function () {
+    var t = fTxt || ta.value;
+    var k = ki.value;
+    if (!k.replace(/[^a-zA-Z]/g, '').length) { shT('Key must contain at least one letter', true); return; }
+    setOut(vig(t, k, true), 'enc');
+    shT('Encrypted successfully');
   });
-  copyBtn.addEventListener('click', () => {
-    navigator.clipboard.writeText(outputText).then(() => showToast('Copied to clipboard'));
+ 
+  decB.addEventListener('click', function () {
+    var t = fTxt || ta.value;
+    var k = ki.value;
+    if (!k.replace(/[^a-zA-Z]/g, '').length) { shT('Key must contain at least one letter', true); return; }
+    setOut(vig(t, k, false), 'dec');
+    shT('Decrypted successfully');
   });
-  dlBtn.addEventListener('click', () => {
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([outputText], { type: 'text/plain' }));
-    a.download = 'secure_output.txt'; a.click(); URL.revokeObjectURL(a.href);
-    showToast('Downloaded secure_output.txt');
+ 
+  cpB.addEventListener('click', function () {
+    navigator.clipboard.writeText(out).then(function () { shT('Copied to clipboard'); });
+  });
+ 
+  dlB.addEventListener('click', function () {
+    var a  = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([out], { type: 'text/plain' }));
+    a.download = 'secure_output.txt';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    shT('Downloaded secure_output.txt');
   });
 </script>
+ 
 </body>
 </html>
