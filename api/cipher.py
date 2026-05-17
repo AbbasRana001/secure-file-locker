@@ -1,21 +1,20 @@
 """
 Vigenère Cipher — Vercel Python Serverless Function
-Handles POST /api/cipher with JSON body:
-  { "text": str, "key": str, "mode": "encrypt" | "decrypt" }
-Returns:
-  { "result": str } or { "error": str }
+POST /api/cipher
+Body: { "text": str, "key": str, "mode": "encrypt" | "decrypt" }
 """
 
 import json
 import re
+from http.server import BaseHTTPRequestHandler
 
 
 def vigenere(text: str, key: str, encrypt: bool) -> str:
     """
-    Apply the Vigenère cipher to `text` using `key`.
-    Non-alphabetic characters pass through unchanged.
+    Apply the Vigenère cipher.
     Encrypt:  E(i) = (P(i) + K(i)) mod 26
     Decrypt:  D(i) = (C(i) - K(i) + 26) mod 26
+    Non-alphabetic characters pass through unchanged.
     """
     key = re.sub(r"[^A-Za-z]", "", key).upper()
     if not key:
@@ -38,40 +37,40 @@ def vigenere(text: str, key: str, encrypt: bool) -> str:
     return "".join(result)
 
 
-def handler(request):
-    """Vercel Python handler."""
-    # CORS headers for browser fetch
-    headers = {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
-    }
+class handler(BaseHTTPRequestHandler):
 
-    if request.method == "OPTIONS":
-        return Response("", status=204, headers=headers)
+    def _send(self, status: int, body: dict):
+        payload = json.dumps(body).encode()
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.end_headers()
+        self.wfile.write(payload)
 
-    if request.method != "POST":
-        body = json.dumps({"error": "Method not allowed."})
-        return Response(body, status=405, headers=headers)
+    def do_OPTIONS(self):
+        self._send(204, {})
 
-    try:
-        payload = request.json
-        text = payload.get("text", "")
-        key = payload.get("key", "")
-        mode = payload.get("mode", "")
+    def do_POST(self):
+        length = int(self.headers.get("Content-Length", 0))
+        try:
+            payload = json.loads(self.rfile.read(length))
+            text = payload.get("text", "")
+            key  = payload.get("key", "")
+            mode = payload.get("mode", "")
 
-        if mode not in ("encrypt", "decrypt"):
-            raise ValueError("mode must be 'encrypt' or 'decrypt'.")
-        if not text:
-            raise ValueError("text is required.")
-        if not key:
-            raise ValueError("key is required.")
+            if mode not in ("encrypt", "decrypt"):
+                raise ValueError("mode must be 'encrypt' or 'decrypt'.")
+            if not text:
+                raise ValueError("text is required.")
+            if not key:
+                raise ValueError("key is required.")
 
-        result = vigenere(text, key, encrypt=(mode == "encrypt"))
-        body = json.dumps({"result": result})
-        return Response(body, status=200, headers=headers)
+            result = vigenere(text, key, encrypt=(mode == "encrypt"))
+            self._send(200, {"result": result})
 
-    except (KeyError, ValueError, TypeError) as exc:
-        body = json.dumps({"error": str(exc)})
-        return Response(body, status=400, headers=headers)
+        except (ValueError, KeyError, TypeError) as exc:
+            self._send(400, {"error": str(exc)})
+        except Exception:
+            self._send(500, {"error": "Internal server error."})
