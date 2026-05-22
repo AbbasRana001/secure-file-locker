@@ -6,31 +6,33 @@
 
 import { vigenere } from "./cipher.js";
 
-/* ─── Toast ─────────────────────────────────────────────────────── */
-const toast    = document.getElementById("toast");
+/* ─── Toast ──────────────────────────────────────────────────────── */
+const toast = document.getElementById("toast");
 const toastMsg = document.getElementById("toastMsg");
 let toastTimer;
 
 function showToast(msg, isError = false) {
   toastMsg.textContent = msg;
-  toast.className = `toast ${isError ? "toast--error" : "toast--ok"}`;
+  toast.className = "toast " + (isError ? "toast--error" : "toast--ok");
   toast.setAttribute("aria-hidden", "false");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => {
+  toastTimer = setTimeout(function () {
     toast.setAttribute("aria-hidden", "true");
     toast.className = "toast";
   }, 2800);
 }
 
-/* ─── Copy to clipboard ──────────────────────────────────────────── */
-function copyText(text) {
-  if (!text || !text.trim()) { showToast("Nothing to copy.", true); return; }
-  navigator.clipboard.writeText(text).then(() => showToast("Copied to clipboard."));
+/* ─── Copy helper ────────────────────────────────────────────────── */
+function copyToClipboard(text) {
+  if (!text || text.trim() === "") { showToast("Nothing to copy.", true); return; }
+  navigator.clipboard.writeText(text).then(function () {
+    showToast("Copied to clipboard.");
+  });
 }
 
-/* ─── Download as .txt ───────────────────────────────────────────── */
+/* ─── Download helper ────────────────────────────────────────────── */
 function downloadTxt(text, filename) {
-  const a = document.createElement("a");
+  var a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([text], { type: "text/plain" }));
   a.download = filename;
   a.click();
@@ -38,217 +40,258 @@ function downloadTxt(text, filename) {
   showToast("Downloaded " + filename);
 }
 
-/* ─── Core cipher call ───────────────────────────────────────────────
-   1. Try the Python serverless API.
-   2. If that fails for ANY reason, run the same algorithm in cipher.js.
-   Always returns the result string, or throws with a readable message.
-──────────────────────────────────────────────────────────────────── */
-async function runCipher(text, key, mode) {
-  if (!text || text.trim() === "") throw new Error("No text to process.");
-  if (!key || key.replace(/[^a-zA-Z]/g, "") === "") throw new Error("Key must contain at least one letter.");
-
-  // Try API
-  try {
-    const res = await fetch("/api/cipher", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, key, mode }),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (data.result !== undefined) return data.result;
-    }
-  } catch (_) {
-    // Network error or API unavailable — fall through to JS
-  }
-
-  // JS fallback — guaranteed to work offline / local file open
-  return vigenere(text, key, mode === "encrypt");
-}
-
 /* ─── Eye toggle ─────────────────────────────────────────────────── */
 function setupEye(eyeBtn, input) {
-  eyeBtn.addEventListener("click", () => {
-    const hidden = input.type === "password";
+  eyeBtn.addEventListener("click", function () {
+    var hidden = input.type === "password";
     input.type = hidden ? "text" : "password";
     eyeBtn.querySelector(".eye-icon").textContent = hidden ? "👁" : "🙈";
     eyeBtn.setAttribute("aria-label", hidden ? "Hide key" : "Show key");
   });
 }
 
-/* ─── Build one panel (encrypt or decrypt) ───────────────────────────
-   All IDs are prefixed with `p` ("enc" or "dec") so this function
-   works identically for both panels with zero duplication.
+/* ─── Cipher runner ──────────────────────────────────────────────────
+   Tries the Python API first, falls back to cipher.js automatically.
 ──────────────────────────────────────────────────────────────────── */
-function buildPanel(p, mode) {
-  // Grab every element by its prefixed ID
-  const dropzone    = document.getElementById(p + "Dropzone");
-  const fileInput   = document.getElementById(p + "FileInput");
-  const textarea    = document.getElementById(p + "TextInput");
-  const keyInput    = document.getElementById(p + "KeyInput");
-  const eyeBtn      = document.getElementById(p + "EyeBtn");
-  const actionBtn   = document.getElementById(p + "Btn");       // Encrypt / Decrypt
-  const spinner     = document.getElementById(p + "Spinner");
-  const outputBox   = document.getElementById(p + "OutputBox");
-  const placeholder = document.getElementById(p + "OutputPlaceholder");
-  const badge       = document.getElementById(p + "Badge");
-  const outCopy     = document.getElementById(p + "OutputCopy");
-  const outClear    = document.getElementById(p + "OutputClear");
-  const dlBtn       = document.getElementById(p + "DownloadBtn");
-  const txtCopy     = document.getElementById(p + "TextCopy");
-  const txtClear    = document.getElementById(p + "TextClear");
-  const keyCopy     = document.getElementById(p + "KeyCopy");
+async function runCipher(text, key, mode) {
+  // Try the Vercel Python function
+  try {
+    var res = await fetch("/api/cipher", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: text, key: key, mode: mode }),
+    });
+    if (res.ok) {
+      var data = await res.json();
+      if (typeof data.result === "string") return data.result;
+    }
+  } catch (_) {
+    // API unreachable — use JS fallback below
+  }
+  // JS fallback: same algorithm as api/cipher.py
+  return vigenere(text, key, mode === "encrypt");
+}
 
-  // Holds the FULL text of any uploaded file (textarea may only show preview)
-  let fileContent = "";
-  // Holds the last cipher result
-  let result = "";
+/* ─── Panel builder ──────────────────────────────────────────────────
+   Called once for "enc" (encrypt) and once for "dec" (decrypt).
+   Every element ID in the HTML is prefixed with the same string,
+   so this single function wires up both panels identically.
+──────────────────────────────────────────────────────────────────── */
+function buildPanel(prefix, mode) {
 
-  /* ── Enable / disable the action button ──
-     Needs: something to process (file OR typed text) + a valid key   */
+  // ── Grab all DOM elements for this panel ──
+  var dropzone = document.getElementById(prefix + "Dropzone");
+  var fileInput = document.getElementById(prefix + "FileInput");
+  var textarea = document.getElementById(prefix + "TextInput");
+  var keyInput = document.getElementById(prefix + "KeyInput");
+  var eyeBtn = document.getElementById(prefix + "EyeBtn");
+  var actionBtn = document.getElementById(prefix + "Btn");
+  var spinner = document.getElementById(prefix + "Spinner");
+  var outputBox = document.getElementById(prefix + "OutputBox");
+  var placeholder = document.getElementById(prefix + "OutputPlaceholder");
+  var badge = document.getElementById(prefix + "Badge");
+  var outCopyBtn = document.getElementById(prefix + "OutputCopy");
+  var outClearBtn = document.getElementById(prefix + "OutputClear");
+  var dlBtn = document.getElementById(prefix + "DownloadBtn");
+  var txtCopyBtn = document.getElementById(prefix + "TextCopy");
+  var txtClearBtn = document.getElementById(prefix + "TextClear");
+  var keyCopyBtn = document.getElementById(prefix + "KeyCopy");
+
+  // Abort early if any element is missing — prevents silent null errors
+  var elements = {
+    dropzone, fileInput, textarea, keyInput, eyeBtn, actionBtn,
+    spinner, outputBox, placeholder, badge, outCopyBtn, outClearBtn, dlBtn,
+    txtCopyBtn, txtClearBtn, keyCopyBtn
+  };
+  for (var name in elements) {
+    if (!elements[name]) {
+      console.error("buildPanel(" + prefix + "): missing element #" + prefix + name);
+      return;
+    }
+  }
+
+  // ── State ──
+  var fileContent = "";   // full text of uploaded file
+  var resultText = "";   // last cipher output
+
+  // ── Enable/disable the action button ──
   function refreshBtn() {
-    const hasText = fileContent.length > 0 || textarea.value.trim().length > 0;
-    const hasKey  = keyInput.value.replace(/[^a-zA-Z]/g, "").length > 0;
+    var hasText = fileContent.length > 0 || textarea.value.trim().length > 0;
+    var hasKey = keyInput.value.replace(/[^a-zA-Z]/g, "").length > 0;
     actionBtn.disabled = !(hasText && hasKey);
   }
 
-  /* ── File loader ── */
+  // ── Load a file via FileReader ──
   function loadFile(file) {
     if (!file) return;
-    if (!file.name.endsWith(".txt")) {
-      showToast("Only .txt files are supported.", true);
+
+    // Accept any plain text file — check MIME type, fall back to extension
+    var isText = file.type.startsWith("text/") ||
+      file.name.toLowerCase().endsWith(".txt");
+    if (!isText) {
+      showToast("Please upload a plain text (.txt) file.", true);
       return;
     }
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      fileContent = e.target.result;          // store full text
-      // Show preview in textarea
+
+    var reader = new FileReader();
+
+    reader.onload = function (e) {
+      fileContent = e.target.result;
+
+      // Show preview in textarea (first 4000 chars)
       textarea.value = fileContent.length > 4000
-        ? fileContent.slice(0, 4000) + "…"
+        ? fileContent.slice(0, 4000) + "\n…[file preview truncated]"
         : fileContent;
-      // Update dropzone UI
+
+      // Update dropzone appearance
       dropzone.classList.add("dropzone--loaded");
       dropzone.querySelector(".dropzone__label").textContent = file.name;
-      dropzone.querySelector(".dropzone__hint").textContent  =
+      dropzone.querySelector(".dropzone__hint").textContent =
         (file.size / 1024).toFixed(1) + " KB loaded";
+
       refreshBtn();
     };
-    reader.onerror = function() {
-      showToast("Could not read the file.", true);
+
+    reader.onerror = function () {
+      showToast("File could not be read.", true);
     };
+
     reader.readAsText(file);
   }
 
-  /* ── Reset output area ── */
+  // ── Reset the output area back to empty state ──
   function resetOutput() {
-    result = "";
+    resultText = "";
     outputBox.classList.remove("has-output");
-    // Clear text content but keep the placeholder element inside
-    while (outputBox.firstChild) outputBox.removeChild(outputBox.firstChild);
+    outputBox.textContent = "";
     outputBox.appendChild(placeholder);
     placeholder.hidden = false;
     badge.hidden = true;
-    outCopy.disabled  = true;
-    outClear.disabled = true;
-    dlBtn.disabled    = true;
+    outCopyBtn.disabled = true;
+    outClearBtn.disabled = true;
+    dlBtn.disabled = true;
   }
 
-  /* ── Events ── */
+  // ── Wire up events ──
 
-  // File input (click)
-  fileInput.addEventListener("change", function(e) {
-    loadFile(e.target.files[0]);
+  // File chosen via click
+  fileInput.addEventListener("change", function (e) {
+    if (e.target.files && e.target.files[0]) {
+      loadFile(e.target.files[0]);
+    }
   });
 
-  // Drag and drop
-  dropzone.addEventListener("dragover", function(e) {
+  // Drag over
+  dropzone.addEventListener("dragover", function (e) {
     e.preventDefault();
     dropzone.classList.add("dropzone--over");
   });
-  dropzone.addEventListener("dragleave", function() {
+  dropzone.addEventListener("dragleave", function () {
     dropzone.classList.remove("dropzone--over");
-  });
-  dropzone.addEventListener("drop", function(e) {
-    e.preventDefault();
-    dropzone.classList.remove("dropzone--over");
-    loadFile(e.dataTransfer.files[0]);
   });
 
-  // Typing in textarea clears any loaded file
-  textarea.addEventListener("input", function() {
-    fileContent = "";
+  // Drop
+  dropzone.addEventListener("drop", function (e) {
+    e.preventDefault();
+    dropzone.classList.remove("dropzone--over");
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      loadFile(e.dataTransfer.files[0]);
+    }
+  });
+
+  // Typing in textarea: discard loaded file, use typed text instead
+  textarea.addEventListener("input", function () {
+    if (fileContent !== "") {
+      // User is editing — stop using the file
+      fileContent = "";
+      dropzone.classList.remove("dropzone--loaded");
+      dropzone.querySelector(".dropzone__label").textContent = "Drop a .txt file, or click to browse";
+      dropzone.querySelector(".dropzone__hint").textContent = ".txt only — stays in your browser";
+    }
     refreshBtn();
   });
 
-  // Key input
+  // Key typing
   keyInput.addEventListener("input", refreshBtn);
 
   // Eye toggle
   setupEye(eyeBtn, keyInput);
 
-  // Copy plaintext / ciphertext
-  txtCopy.addEventListener("click", function() {
-    copyText(fileContent || textarea.value);
+  // Copy input text
+  txtCopyBtn.addEventListener("click", function () {
+    copyToClipboard(fileContent || textarea.value);
   });
 
   // Clear input
-  txtClear.addEventListener("click", function() {
+  txtClearBtn.addEventListener("click", function () {
     textarea.value = "";
-    fileContent    = "";
+    fileContent = "";
+    fileInput.value = "";  // reset file picker so same file can be re-selected
     dropzone.classList.remove("dropzone--loaded");
     dropzone.querySelector(".dropzone__label").textContent = "Drop a .txt file, or click to browse";
-    dropzone.querySelector(".dropzone__hint").textContent  = ".txt only — stays in your browser";
-    // Reset the file input so the same file can be re-selected
-    fileInput.value = "";
+    dropzone.querySelector(".dropzone__hint").textContent = ".txt only — stays in your browser";
     refreshBtn();
   });
 
   // Copy key
-  keyCopy.addEventListener("click", function() {
-    copyText(keyInput.value);
+  keyCopyBtn.addEventListener("click", function () {
+    copyToClipboard(keyInput.value);
   });
 
-  // Main action button (Encrypt or Decrypt)
-  actionBtn.addEventListener("click", async function() {
-    const text = fileContent || textarea.value;
-    const key  = keyInput.value;
+  // ── Main action: Encrypt or Decrypt ──
+  actionBtn.addEventListener("click", async function () {
+    var text = fileContent || textarea.value;
+    var key = keyInput.value;
 
-    spinner.hidden  = false;
+    if (!text || text.trim() === "") {
+      showToast("Please enter or upload some text first.", true);
+      return;
+    }
+    if (key.replace(/[^a-zA-Z]/g, "") === "") {
+      showToast("Key must contain at least one letter.", true);
+      return;
+    }
+
+    // Show spinner, disable button while processing
+    spinner.hidden = false;
     actionBtn.disabled = true;
 
     try {
-      result = await runCipher(text, key, mode);
+      resultText = await runCipher(text, key, mode);
 
-      // Render output
+      // Display result
       placeholder.hidden = true;
       outputBox.classList.add("has-output");
-      outputBox.textContent = result.length > 8000
-        ? result.slice(0, 8000) + "\n\n[preview truncated — download for full output]"
-        : result;
+      outputBox.textContent = resultText.length > 8000
+        ? resultText.slice(0, 8000) + "\n\n[preview truncated — download for full output]"
+        : resultText;
 
-      badge.hidden      = false;
-      outCopy.disabled  = false;
-      outClear.disabled = false;
-      dlBtn.disabled    = false;
+      badge.hidden = false;
+      outCopyBtn.disabled = false;
+      outClearBtn.disabled = false;
+      dlBtn.disabled = false;
 
       showToast(mode === "encrypt" ? "Encrypted successfully." : "Decrypted successfully.");
+
     } catch (err) {
       showToast(err.message || "Something went wrong.", true);
     } finally {
-      spinner.hidden = false;
-      refreshBtn();
+      spinner.hidden = true;   // always hide spinner when done
+      refreshBtn();            // re-enable button if inputs are still valid
     }
   });
 
   // Copy output
-  outCopy.addEventListener("click", function() { copyText(result); });
+  outCopyBtn.addEventListener("click", function () {
+    copyToClipboard(resultText);
+  });
 
   // Clear output
-  outClear.addEventListener("click", resetOutput);
+  outClearBtn.addEventListener("click", resetOutput);
 
-  // Download
-  dlBtn.addEventListener("click", function() {
-    downloadTxt(result, mode === "encrypt" ? "encrypted.txt" : "decrypted.txt");
+  // Download output
+  dlBtn.addEventListener("click", function () {
+    downloadTxt(resultText, mode === "encrypt" ? "encrypted.txt" : "decrypted.txt");
   });
 }
 
@@ -256,13 +299,14 @@ function buildPanel(p, mode) {
 buildPanel("enc", "encrypt");
 buildPanel("dec", "decrypt");
 
-/* ─── Mode switcher (Encrypt & Save / Decrypt & Read) ───────────── */
-const modeEncTab = document.getElementById("modeEncTab");
-const modeDecTab = document.getElementById("modeDecTab");
-const panelEnc   = document.getElementById("panel-encrypt");
-const panelDec   = document.getElementById("panel-decrypt");
 
-modeEncTab.addEventListener("click", function() {
+/* ─── Mode switcher (Encrypt & Save / Decrypt & Read tabs) ──────── */
+var modeEncTab = document.getElementById("modeEncTab");
+var modeDecTab = document.getElementById("modeDecTab");
+var panelEnc = document.getElementById("panel-encrypt");
+var panelDec = document.getElementById("panel-decrypt");
+
+modeEncTab.addEventListener("click", function () {
   modeEncTab.classList.add("mode-tab--active");
   modeDecTab.classList.remove("mode-tab--active");
   modeEncTab.setAttribute("aria-selected", "true");
@@ -271,7 +315,7 @@ modeEncTab.addEventListener("click", function() {
   panelDec.hidden = true;
 });
 
-modeDecTab.addEventListener("click", function() {
+modeDecTab.addEventListener("click", function () {
   modeDecTab.classList.add("mode-tab--active");
   modeEncTab.classList.remove("mode-tab--active");
   modeDecTab.setAttribute("aria-selected", "true");
@@ -280,17 +324,18 @@ modeDecTab.addEventListener("click", function() {
   panelEnc.hidden = true;
 });
 
-/* ─── Page navigation (nav tabs + CTA button) ───────────────────── */
+
+/* ─── Page navigation (nav tabs + About page CTA button) ────────── */
 function switchPage(target) {
-  document.querySelectorAll(".nav-tab").forEach(function(t) {
-    t.setAttribute("aria-selected", t.dataset.page === target);
+  document.querySelectorAll(".nav-tab").forEach(function (t) {
+    t.setAttribute("aria-selected", String(t.dataset.page === target));
   });
-  document.querySelectorAll(".page").forEach(function(p) {
+  document.querySelectorAll(".page").forEach(function (p) {
     p.hidden = p.id !== "page-" + target;
   });
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-document.querySelectorAll("[data-page]").forEach(function(btn) {
-  btn.addEventListener("click", function() { switchPage(btn.dataset.page); });
+document.querySelectorAll("[data-page]").forEach(function (btn) {
+  btn.addEventListener("click", function () { switchPage(btn.dataset.page); });
 });
