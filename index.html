@@ -9,33 +9,28 @@
 </head>
 <body>
 
-<!-- ── Navigation ── -->
+<!-- Navigation -->
 <nav class="nav" aria-label="Main navigation">
   <a class="nav__brand" href="#">
     <span class="nav__brand-icon" aria-hidden="true">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-           stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-      </svg>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
     </span>
     <span class="nav__brand-name">Secure File Locker</span>
   </a>
-
   <div class="nav__tabs" role="tablist">
     <button class="nav-tab" role="tab" aria-selected="true" data-page="tool">
-      🔒 <span>Encrypt / Decrypt</span>
+      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      <span>Encrypt / Decrypt</span>
     </button>
     <button class="nav-tab" role="tab" aria-selected="false" data-page="about">
-      📖 <span>About the Cipher</span>
+      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+      <span>About the Cipher</span>
     </button>
   </div>
 </nav>
 
 
-<!-- ═══════════════════════════════════════
-     PAGE — ENCRYPT / DECRYPT
-════════════════════════════════════════ -->
+<!-- PAGE: ENCRYPT / DECRYPT -->
 <div class="page" id="page-tool" role="tabpanel">
 
   <!-- Hero -->
@@ -44,264 +39,276 @@
       <div>
         <p class="hero__eyebrow">Vigenère Cipher</p>
         <h1 class="hero__title" id="hero-title">Secure File<br>Locker</h1>
-        <p class="hero__sub">
-          Upload a .txt file or paste your content, enter a secret keyword,
-          and encrypt or decrypt — entirely in your browser. Nothing leaves your device.
-        </p>
+        <p class="hero__sub">Paste your text, enter a secret keyword, and encrypt or decrypt — entirely in your browser. Nothing leaves your device.</p>
       </div>
       <div class="hero__stats">
-        <div class="stat stat--green">
-          <div class="stat__value">100%</div>
-          <div class="stat__label">Client-side · no uploads</div>
-        </div>
-        <div class="stat">
-          <div class="stat__value">26ⁿ</div>
-          <div class="stat__label">Possible key combinations</div>
-        </div>
-        <div class="stat">
-          <div class="stat__value">1553</div>
-          <div class="stat__label">Year of origin</div>
-        </div>
+        <div class="stat stat--green"><div class="stat__value">100%</div><div class="stat__label">Client-side · no uploads</div></div>
+        <div class="stat"><div class="stat__value">26ⁿ</div><div class="stat__label">Possible key combinations</div></div>
+        <div class="stat"><div class="stat__value">1553</div><div class="stat__label">Year of origin</div></div>
       </div>
     </div>
   </section>
 
-  <!-- Tool -->
-  <main class="tool-layout" aria-label="Cipher tool">
-
-    <!-- Left column: input + key -->
-    <div>
-      <div class="card">
-        <p class="card__label">Input</p>
-
-        <!-- Drop zone -->
-        <div class="dropzone" id="dropzone" role="button" aria-label="Upload .txt file">
-          <input type="file" id="fileInput" accept=".txt" aria-label="Choose .txt file" tabindex="-1" />
-          <div class="dropzone__icon" aria-hidden="true"></div>
-          <p class="dropzone__label">Drop a .txt file, or click to browse</p>
-          <p class="dropzone__hint">.txt only — stays in your browser</p>
-        </div>
-
-        <div class="divider">or type / paste</div>
-
-        <textarea
-          id="textInput"
-          rows="6"
-          placeholder="Paste plaintext or ciphertext here…"
-          aria-label="Text to encrypt or decrypt"
-          spellcheck="false"
-        ></textarea>
-      </div>
-
-      <div class="card">
-        <p class="card__label">Secret key</p>
-
-        <div class="key-wrap">
-          <input
-            type="password"
-            id="keyInput"
-            placeholder="Letters only — longer is stronger"
-            autocomplete="off"
-            aria-label="Vigenère cipher keyword"
-            spellcheck="false"
-          />
-          <button class="eye-btn" id="eyeBtn" aria-label="Show key" type="button">
-            <span class="eye-icon">🙈</span>
-          </button>
-        </div>
-
-        <div class="btn-row">
-          <button class="btn btn--primary" id="encBtn" disabled type="button">
-            🔒 Encrypt
-          </button>
-          <button class="btn btn--ghost" id="decBtn" disabled type="button">
-            🔓 Decrypt
-          </button>
-        </div>
-      </div>
+  <!-- Mode switcher tabs -->
+  <div class="mode-bar">
+    <div class="mode-switcher" role="tablist" aria-label="Choose mode">
+      <button class="mode-tab mode-tab--active" id="modeEncTab" role="tab" aria-selected="true" aria-controls="panel-encrypt">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Encrypt &amp; Save
+      </button>
+      <button class="mode-tab" id="modeDecTab" role="tab" aria-selected="false" aria-controls="panel-decrypt">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/><path d="m15 8 2 2-2 2"/></svg>
+        Decrypt &amp; Read
+      </button>
     </div>
+  </div>
 
-    <!-- Right column: output + guide -->
-    <div>
-      <div class="card">
-        <div class="output-header">
-          <p class="card__label" style="margin:0">Output</p>
-          <div style="display:flex;align-items:center;gap:8px">
-            <span class="badge" id="outputBadge" hidden></span>
-            <span class="spinner" id="spinner" hidden aria-label="Processing"></span>
-            <button class="icon-btn" id="copyBtn" disabled type="button" aria-label="Copy output">
-              📋 Copy
-            </button>
+  <!-- ENCRYPT PANEL -->
+  <main class="tool-panel" id="panel-encrypt" role="tabpanel" aria-labelledby="modeEncTab">
+    <div class="panel-grid">
+
+      <!-- Left: input -->
+      <div class="panel-col">
+        <div class="card">
+
+          <div class="dropzone" id="encDropzone" role="button" aria-label="Upload .txt file">
+            <input type="file" id="encFileInput" accept=".txt" tabindex="-1" />
+            <div class="dropzone__icon" aria-hidden="true"></div>
+            <p class="dropzone__label">Drop a .txt file, or click to browse</p>
+            <p class="dropzone__hint">.txt only — stays in your browser</p>
           </div>
-        </div>
 
-        <div class="output-box" id="outputBox" role="region" aria-live="polite" aria-label="Cipher output">
-          <span class="output-placeholder" id="outputPlaceholder">
-            Your encrypted or decrypted text will appear here.
-          </span>
-        </div>
+          <div class="divider">or type / paste</div>
 
-        <button class="download-btn" id="downloadBtn" disabled type="button" aria-label="Download output as .txt">
-          ⬇ Download as .txt
-        </button>
+          <div class="field-wrap">
+            <div class="field-header">
+              <label class="field-label" for="encTextInput">Plaintext</label>
+              <div class="field-actions">
+                <button class="action-btn" id="encTextCopy" type="button">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  Copy
+                </button>
+                <button class="action-btn action-btn--danger" id="encTextClear" type="button">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  Clear
+                </button>
+              </div>
+            </div>
+            <textarea id="encTextInput" rows="7" placeholder="Type or paste your plaintext here…" spellcheck="false"></textarea>
+          </div>
+
+          <div class="field-wrap" style="margin-top:14px">
+            <div class="field-header">
+              <label class="field-label" for="encKeyInput">Secret key</label>
+              <div class="field-actions">
+                <button class="action-btn" id="encKeyCopy" type="button">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  Copy
+                </button>
+              </div>
+            </div>
+            <div class="key-wrap">
+              <input type="password" id="encKeyInput" placeholder="Letters only — longer is stronger" autocomplete="off" spellcheck="false" />
+              <button class="eye-btn" id="encEyeBtn" aria-label="Show key" type="button"><span class="eye-icon">🙈</span></button>
+            </div>
+          </div>
+
+          <button class="btn btn--primary btn--full" id="encBtn" disabled type="button" style="margin-top:14px">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Encrypt
+          </button>
+        </div>
       </div>
 
-      <div class="card">
-        <p class="card__label">Quick guide</p>
-        <div class="guide" role="list">
-          <div class="guide-step" role="listitem">
-            <span class="guide-step__num">1</span>
-            <div>
-              <p class="guide-step__title">Upload or paste text</p>
-              <p class="guide-step__desc">Drop a .txt file or type directly into the text area above.</p>
+      <!-- Right: encrypted output -->
+      <div class="panel-col">
+        <div class="card">
+          <div class="field-header" style="margin-bottom:12px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="field-label" style="margin:0">Encrypted output</span>
+              <span class="badge badge--enc" id="encBadge" hidden>Encrypted</span>
+              <span class="spinner" id="encSpinner" hidden></span>
+            </div>
+            <div class="field-actions">
+              <button class="action-btn" id="encOutputCopy" disabled type="button">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                Copy
+              </button>
+              <button class="action-btn action-btn--danger" id="encOutputClear" disabled type="button">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                Clear
+              </button>
             </div>
           </div>
-          <div class="guide-step" role="listitem">
-            <span class="guide-step__num">2</span>
-            <div>
-              <p class="guide-step__title">Enter a keyword</p>
-              <p class="guide-step__desc">Letters only. Longer keywords are exponentially harder to crack.</p>
-            </div>
+          <div class="output-box" id="encOutputBox" role="region" aria-live="polite">
+            <span class="output-placeholder" id="encOutputPlaceholder">Encrypted text will appear here.</span>
           </div>
-          <div class="guide-step" role="listitem">
-            <span class="guide-step__num">3</span>
-            <div>
-              <p class="guide-step__title">Encrypt or Decrypt</p>
-              <p class="guide-step__desc">Use the same keyword to reverse the operation. Copy or download the result.</p>
-            </div>
-          </div>
+          <button class="download-btn" id="encDownloadBtn" disabled type="button">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download as .txt
+          </button>
         </div>
       </div>
+
     </div>
-
   </main>
-</div>
 
 
-<!-- ═══════════════════════════════════════
-     PAGE — ABOUT THE CIPHER
-════════════════════════════════════════ -->
+  <!-- DECRYPT PANEL -->
+  <main class="tool-panel" id="panel-decrypt" role="tabpanel" aria-labelledby="modeDecTab" hidden>
+    <div class="panel-grid">
+
+      <!-- Left: ciphertext input -->
+      <div class="panel-col">
+        <div class="card">
+
+          <div class="dropzone" id="decDropzone" role="button" aria-label="Upload .txt file">
+            <input type="file" id="decFileInput" accept=".txt" tabindex="-1" />
+            <div class="dropzone__icon" aria-hidden="true"></div>
+            <p class="dropzone__label">Drop a .txt file, or click to browse</p>
+            <p class="dropzone__hint">.txt only — stays in your browser</p>
+          </div>
+
+          <div class="divider">or type / paste</div>
+
+          <div class="field-wrap">
+            <div class="field-header">
+              <label class="field-label" for="decTextInput">Ciphertext</label>
+              <div class="field-actions">
+                <button class="action-btn" id="decTextCopy" type="button">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  Copy
+                </button>
+                <button class="action-btn action-btn--danger" id="decTextClear" type="button">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  Clear
+                </button>
+              </div>
+            </div>
+            <textarea id="decTextInput" rows="7" placeholder="Paste your encrypted ciphertext here…" spellcheck="false"></textarea>
+          </div>
+
+          <div class="field-wrap" style="margin-top:14px">
+            <div class="field-header">
+              <label class="field-label" for="decKeyInput">Secret key</label>
+              <div class="field-actions">
+                <button class="action-btn" id="decKeyCopy" type="button">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  Copy
+                </button>
+              </div>
+            </div>
+            <div class="key-wrap">
+              <input type="password" id="decKeyInput" placeholder="Same keyword used to encrypt" autocomplete="off" spellcheck="false" />
+              <button class="eye-btn" id="decEyeBtn" aria-label="Show key" type="button"><span class="eye-icon">🙈</span></button>
+            </div>
+          </div>
+
+          <button class="btn btn--ghost btn--full" id="decBtn" disabled type="button" style="margin-top:14px">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/><path d="m15 8 2 2-2 2"/></svg>
+            Decrypt
+          </button>
+        </div>
+      </div>
+
+      <!-- Right: decrypted output -->
+      <div class="panel-col">
+        <div class="card">
+          <div class="field-header" style="margin-bottom:12px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="field-label" style="margin:0">Decrypted output</span>
+              <span class="badge badge--dec" id="decBadge" hidden>Decrypted</span>
+              <span class="spinner" id="decSpinner" hidden></span>
+            </div>
+            <div class="field-actions">
+              <button class="action-btn" id="decOutputCopy" disabled type="button">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                Copy
+              </button>
+              <button class="action-btn action-btn--danger" id="decOutputClear" disabled type="button">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                Clear
+              </button>
+            </div>
+          </div>
+          <div class="output-box" id="decOutputBox" role="region" aria-live="polite">
+            <span class="output-placeholder" id="decOutputPlaceholder">Decrypted text will appear here.</span>
+          </div>
+          <button class="download-btn" id="decDownloadBtn" disabled type="button">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download as .txt
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+</div><!-- end #page-tool -->
+
+
+<!-- PAGE: ABOUT THE CIPHER -->
 <div class="page" id="page-about" hidden role="tabpanel">
 
   <section class="about-hero" aria-labelledby="about-title">
     <div class="about-hero__inner">
       <p class="about-hero__tag">History &amp; Theory</p>
       <h1 class="about-hero__title" id="about-title">The Vigenère Cipher</h1>
-      <p class="about-hero__sub">
-        First described by Giovan Battista Bellaso in 1553 and later misattributed to
-        Blaise de Vigenère, this polyalphabetic cipher was considered unbreakable for
-        over three centuries — earning the name <em>"le chiffre indéchiffrable."</em>
-      </p>
+      <p class="about-hero__sub">First described by Giovan Battista Bellaso in 1553 and later misattributed to Blaise de Vigenère, this polyalphabetic cipher was considered unbreakable for over three centuries — earning the name <em>"le chiffre indéchiffrable."</em></p>
     </div>
   </section>
 
   <div class="about-content">
-
     <div class="section">
       <h2 class="section__title">What is it?</h2>
       <div class="section__rule"></div>
-      <p>
-        The Vigenère cipher encrypts text by applying a series of Caesar ciphers based on
-        the letters of a repeating keyword. Unlike a Caesar cipher — which shifts every
-        letter by one fixed amount — Vigenère shifts each letter by a different amount,
-        which defeats simple frequency analysis.
-      </p>
-      <p>
-        Each letter of the keyword maps to a shift value: A = 0, B = 1, … Z = 25.
-        The keyword repeats across the full message, pairing each plaintext character
-        with a key character that determines how far to shift it.
-      </p>
+      <p>The Vigenère cipher encrypts text by applying a series of Caesar ciphers based on the letters of a repeating keyword. Unlike a Caesar cipher — which shifts every letter by one fixed amount — Vigenère shifts each letter by a different amount, which defeats simple frequency analysis.</p>
+      <p>Each letter of the keyword maps to a shift value: A = 0, B = 1, … Z = 25. The keyword repeats across the full message, pairing each plaintext character with a key character that determines how far to shift it.</p>
     </div>
-
     <div class="section">
       <h2 class="section__title">Step-by-step</h2>
       <div class="section__rule"></div>
       <div class="steps-grid">
-        <div class="step-card">
-          <div class="step-card__num">1</div>
-          <h3>Map letters to numbers</h3>
-          <p>A = 0, B = 1 … Z = 25. Spaces, digits, and punctuation pass through unchanged.</p>
-        </div>
-        <div class="step-card">
-          <div class="step-card__num">2</div>
-          <h3>Repeat the keyword</h3>
-          <p>Cycle your keyword across the full message so every letter has a matching key letter.</p>
-        </div>
-        <div class="step-card">
-          <div class="step-card__num">3</div>
-          <h3>Shift and wrap at 26</h3>
-          <p>Add (encrypt) or subtract (decrypt) the key value. Wrap results with modulo 26.</p>
-        </div>
+        <div class="step-card"><div class="step-card__num">1</div><h3>Map letters to numbers</h3><p>A = 0, B = 1 … Z = 25. Spaces, digits, and punctuation pass through unchanged.</p></div>
+        <div class="step-card"><div class="step-card__num">2</div><h3>Repeat the keyword</h3><p>Cycle your keyword across the full message so every letter has a matching key letter.</p></div>
+        <div class="step-card"><div class="step-card__num">3</div><h3>Shift and wrap at 26</h3><p>Add (encrypt) or subtract (decrypt) the key value. Wrap results with modulo 26.</p></div>
       </div>
     </div>
-
     <div class="section">
       <h2 class="section__title">The formulas</h2>
       <div class="section__rule"></div>
       <div class="formula-block">
-        <div class="formula-row">
-          <span class="formula-row__label">Encrypt</span>
-          <span class="formula-row__eq">E(i) = ( P(i) + K(i) ) mod 26</span>
-          <span class="formula-note">Add key shift, wrap at 26</span>
-        </div>
-        <div class="formula-row">
-          <span class="formula-row__label">Decrypt</span>
-          <span class="formula-row__eq">D(i) = ( C(i) &minus; K(i) + 26 ) mod 26</span>
-          <span class="formula-note">Subtract shift, wrap at 26</span>
-        </div>
+        <div class="formula-row"><span class="formula-row__label">Encrypt</span><span class="formula-row__eq">E(i) = ( P(i) + K(i) ) mod 26</span><span class="formula-note">Add key shift, wrap at 26</span></div>
+        <div class="formula-row"><span class="formula-row__label">Decrypt</span><span class="formula-row__eq">D(i) = ( C(i) &minus; K(i) + 26 ) mod 26</span><span class="formula-note">Subtract shift, wrap at 26</span></div>
       </div>
-      <p class="formula-legend">
-        P = plaintext value &nbsp;·&nbsp; C = ciphertext value &nbsp;·&nbsp;
-        K = key value &nbsp;·&nbsp; all in range 0–25
-      </p>
+      <p class="formula-legend">P = plaintext value &nbsp;·&nbsp; C = ciphertext value &nbsp;·&nbsp; K = key value &nbsp;·&nbsp; all in range 0–25</p>
     </div>
-
     <div class="section">
       <h2 class="section__title">Strengths &amp; limitations</h2>
       <div class="section__rule"></div>
       <div class="props-grid">
-        <div class="prop-card">
-          <div class="prop-card__icon">🛡</div>
-          <h3>Beats frequency analysis</h3>
-          <p>The shifting key encodes the same letter differently each time, hiding the patterns that break Caesar ciphers.</p>
-        </div>
-        <div class="prop-card">
-          <div class="prop-card__icon">🔑</div>
-          <h3>Symmetric encryption</h3>
-          <p>The same keyword encrypts and decrypts. Both parties must share it through a separate secure channel.</p>
-        </div>
-        <div class="prop-card">
-          <div class="prop-card__icon">📏</div>
-          <h3>Key length matters</h3>
-          <p>Longer keywords reduce periodicity. A key as long as the message, used once, is equivalent to a one-time pad.</p>
-        </div>
-        <div class="prop-card">
-          <div class="prop-card__icon">⚠️</div>
-          <h3>Not modern-secure</h3>
-          <p>The Kasiski examination can recover short repeating keys. Do not use this for real-world sensitive data.</p>
-        </div>
+        <div class="prop-card"><div class="prop-card__icon">🛡</div><h3>Beats frequency analysis</h3><p>The shifting key encodes the same letter differently each time, hiding the patterns that break Caesar ciphers.</p></div>
+        <div class="prop-card"><div class="prop-card__icon">🔑</div><h3>Symmetric encryption</h3><p>The same keyword encrypts and decrypts. Both parties must share it through a separate secure channel.</p></div>
+        <div class="prop-card"><div class="prop-card__icon">📏</div><h3>Key length matters</h3><p>Longer keywords reduce periodicity. A key as long as the message, used once, is equivalent to a one-time pad.</p></div>
+        <div class="prop-card"><div class="prop-card__icon">⚠️</div><h3>Not modern-secure</h3><p>The Kasiski examination can recover short repeating keys. Do not use this for real-world sensitive data.</p></div>
       </div>
     </div>
-
     <div class="section">
       <div class="cta">
-        <div>
-          <h3>Try it yourself</h3>
-          <p>Head to the Encrypt / Decrypt tab and lock your first message.</p>
-        </div>
-        <button class="cta-btn" data-page="tool">🔒 Open the tool</button>
+        <div><h3>Try it yourself</h3><p>Head to the Encrypt / Decrypt tab and lock your first message.</p></div>
+        <button class="cta-btn" data-page="tool">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Open the tool
+        </button>
       </div>
     </div>
-
   </div>
 </div>
 
 
 <!-- Toast -->
 <div class="toast-host" aria-live="polite">
-  <div class="toast" id="toast" aria-hidden="true" role="status">
-    <span id="toastMsg"></span>
-  </div>
+  <div class="toast" id="toast" aria-hidden="true" role="status"><span id="toastMsg"></span></div>
 </div>
 
 <script type="module" src="main.js"></script>
