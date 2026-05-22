@@ -1,15 +1,13 @@
 /**
  * main.js — UI logic for Secure File Locker
  * Two independent panels: Encrypt and Decrypt.
- * Calls Python API (/api/cipher) with client-side fallback via cipher.js.
+ * Falls back to cipher.js if the Python API is unreachable.
  */
 
 import { vigenere } from "./cipher.js";
 
-/* ════════════════════════════════════════
-   TOAST
-════════════════════════════════════════ */
-const toast = document.getElementById("toast");
+/* ─── Toast ─────────────────────────────────────────────────────── */
+const toast    = document.getElementById("toast");
 const toastMsg = document.getElementById("toastMsg");
 let toastTimer;
 
@@ -24,31 +22,32 @@ function showToast(msg, isError = false) {
   }, 2800);
 }
 
-/* ════════════════════════════════════════
-   COPY HELPER — used for every copy button
-════════════════════════════════════════ */
+/* ─── Copy to clipboard ──────────────────────────────────────────── */
 function copyText(text) {
   if (!text || !text.trim()) { showToast("Nothing to copy.", true); return; }
   navigator.clipboard.writeText(text).then(() => showToast("Copied to clipboard."));
 }
 
-/* ════════════════════════════════════════
-   DOWNLOAD HELPER
-════════════════════════════════════════ */
+/* ─── Download as .txt ───────────────────────────────────────────── */
 function downloadTxt(text, filename) {
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([text], { type: "text/plain" }));
   a.download = filename;
   a.click();
   URL.revokeObjectURL(a.href);
-  showToast(`Downloaded ${filename}`);
+  showToast("Downloaded " + filename);
 }
 
-/* ════════════════════════════════════════
-   CIPHER RUNNER — calls API, falls back to JS
-════════════════════════════════════════ */
+/* ─── Core cipher call ───────────────────────────────────────────────
+   1. Try the Python serverless API.
+   2. If that fails for ANY reason, run the same algorithm in cipher.js.
+   Always returns the result string, or throws with a readable message.
+──────────────────────────────────────────────────────────────────── */
 async function runCipher(text, key, mode) {
-  // Try the Python serverless API first
+  if (!text || text.trim() === "") throw new Error("No text to process.");
+  if (!key || key.replace(/[^a-zA-Z]/g, "") === "") throw new Error("Key must contain at least one letter.");
+
+  // Try API
   try {
     const res = await fetch("/api/cipher", {
       method: "POST",
@@ -57,56 +56,63 @@ async function runCipher(text, key, mode) {
     });
     if (res.ok) {
       const data = await res.json();
-      return data.result;
+      if (data.result !== undefined) return data.result;
     }
-    // API returned an error status — fall through to JS fallback
-    throw new Error("API error");
-  } catch {
-    // Fallback: run the exact same algorithm in cipher.js
-    return vigenere(text, key, mode === "encrypt");
+  } catch (_) {
+    // Network error or API unavailable — fall through to JS
   }
+
+  // JS fallback — guaranteed to work offline / local file open
+  return vigenere(text, key, mode === "encrypt");
 }
 
-/* ════════════════════════════════════════
-   EYE TOGGLE HELPER
-════════════════════════════════════════ */
-function setupEyeToggle(eyeBtn, keyInput) {
+/* ─── Eye toggle ─────────────────────────────────────────────────── */
+function setupEye(eyeBtn, input) {
   eyeBtn.addEventListener("click", () => {
-    const isHidden = keyInput.type === "password";
-    keyInput.type = isHidden ? "text" : "password";
-    eyeBtn.querySelector(".eye-icon").textContent = isHidden ? "👁" : "🙈";
-    eyeBtn.setAttribute("aria-label", isHidden ? "Hide key" : "Show key");
+    const hidden = input.type === "password";
+    input.type = hidden ? "text" : "password";
+    eyeBtn.querySelector(".eye-icon").textContent = hidden ? "👁" : "🙈";
+    eyeBtn.setAttribute("aria-label", hidden ? "Hide key" : "Show key");
   });
 }
 
-/* ════════════════════════════════════════
-   FILE LOADER HELPER
-   Reads a .txt file, puts full content in fileState,
-   shows a preview in the textarea, updates the dropzone UI.
-════════════════════════════════════════ */
-function setupDropzone(dropzone, fileInput, textarea, fileState, onLoaded) {
-  // Click on file input
-  fileInput.addEventListener("change", (e) => loadFile(e.target.files[0]));
+/* ─── Build one panel (encrypt or decrypt) ───────────────────────────
+   All IDs are prefixed with `p` ("enc" or "dec") so this function
+   works identically for both panels with zero duplication.
+──────────────────────────────────────────────────────────────────── */
+function buildPanel(p, mode) {
+  // Grab every element by its prefixed ID
+  const dropzone    = document.getElementById(p + "Dropzone");
+  const fileInput   = document.getElementById(p + "FileInput");
+  const textarea    = document.getElementById(p + "TextInput");
+  const keyInput    = document.getElementById(p + "KeyInput");
+  const eyeBtn      = document.getElementById(p + "EyeBtn");
+  const actionBtn   = document.getElementById(p + "Btn");       // Encrypt / Decrypt
+  const spinner     = document.getElementById(p + "Spinner");
+  const outputBox   = document.getElementById(p + "OutputBox");
+  const placeholder = document.getElementById(p + "OutputPlaceholder");
+  const badge       = document.getElementById(p + "Badge");
+  const outCopy     = document.getElementById(p + "OutputCopy");
+  const outClear    = document.getElementById(p + "OutputClear");
+  const dlBtn       = document.getElementById(p + "DownloadBtn");
+  const txtCopy     = document.getElementById(p + "TextCopy");
+  const txtClear    = document.getElementById(p + "TextClear");
+  const keyCopy     = document.getElementById(p + "KeyCopy");
 
-  // Drag and drop
-  dropzone.addEventListener("dragover", (e) => {
-    e.preventDefault();
-    dropzone.classList.add("dropzone--over");
-  });
-  dropzone.addEventListener("dragleave", () => dropzone.classList.remove("dropzone--over"));
-  dropzone.addEventListener("drop", (e) => {
-    e.preventDefault();
-    dropzone.classList.remove("dropzone--over");
-    loadFile(e.dataTransfer.files[0]);
-  });
+  // Holds the FULL text of any uploaded file (textarea may only show preview)
+  let fileContent = "";
+  // Holds the last cipher result
+  let result = "";
 
-  // When user types in the textarea, clear any loaded file
-  // so we use the typed text instead
-  textarea.addEventListener("input", () => {
-    fileState.text = "";
-    onLoaded();
-  });
+  /* ── Enable / disable the action button ──
+     Needs: something to process (file OR typed text) + a valid key   */
+  function refreshBtn() {
+    const hasText = fileContent.length > 0 || textarea.value.trim().length > 0;
+    const hasKey  = keyInput.value.replace(/[^a-zA-Z]/g, "").length > 0;
+    actionBtn.disabled = !(hasText && hasKey);
+  }
 
+  /* ── File loader ── */
   function loadFile(file) {
     if (!file) return;
     if (!file.name.endsWith(".txt")) {
@@ -114,239 +120,149 @@ function setupDropzone(dropzone, fileInput, textarea, fileState, onLoaded) {
       return;
     }
     const reader = new FileReader();
-    reader.onload = (e) => {
-      // Store the FULL file text in state
-      fileState.text = e.target.result;
-
-      // Show a preview in the textarea (first 4000 chars)
-      textarea.value = fileState.text.length > 4000
-        ? fileState.text.slice(0, 4000) + "…"
-        : fileState.text;
-
-      // Update dropzone appearance
+    reader.onload = function(e) {
+      fileContent = e.target.result;          // store full text
+      // Show preview in textarea
+      textarea.value = fileContent.length > 4000
+        ? fileContent.slice(0, 4000) + "…"
+        : fileContent;
+      // Update dropzone UI
       dropzone.classList.add("dropzone--loaded");
       dropzone.querySelector(".dropzone__label").textContent = file.name;
-      dropzone.querySelector(".dropzone__hint").textContent =
+      dropzone.querySelector(".dropzone__hint").textContent  =
         (file.size / 1024).toFixed(1) + " KB loaded";
-
-      // Tell the panel to re-check if the button should be enabled
-      onLoaded();
+      refreshBtn();
+    };
+    reader.onerror = function() {
+      showToast("Could not read the file.", true);
     };
     reader.readAsText(file);
   }
-}
 
-/* ════════════════════════════════════════
-   OUTPUT RENDERER
-   Fills the output box with result text and enables action buttons.
-════════════════════════════════════════ */
-function renderOutput(outputBox, placeholder, badge, text) {
-  placeholder.hidden = true;
-  outputBox.classList.add("has-output");
-  outputBox.textContent = text.length > 8000
-    ? text.slice(0, 8000) + "\n\n[preview truncated — download for full output]"
-    : text;
-  badge.hidden = false;
-}
-
-function clearOutput(outputBox, placeholder, badge, buttons) {
-  placeholder.hidden = false;
-  outputBox.classList.remove("has-output");
-  outputBox.textContent = "";
-  outputBox.appendChild(placeholder);
-  badge.hidden = true;
-  buttons.forEach((b) => { b.disabled = true; });
-}
-
-/* ════════════════════════════════════════
-   ENCRYPT PANEL
-════════════════════════════════════════ */
-(function setupEncryptPanel() {
-  // State: holds the full text of any uploaded file
-  const fileState = { text: "" };
-
-  // DOM elements
-  const dropzone = document.getElementById("encDropzone");
-  const fileInput = document.getElementById("encFileInput");
-  const textarea = document.getElementById("encTextInput");
-  const keyInput = document.getElementById("encKeyInput");
-  const eyeBtn = document.getElementById("encEyeBtn");
-  const encBtn = document.getElementById("encBtn");
-  const spinner = document.getElementById("encSpinner");
-  const outputBox = document.getElementById("encOutputBox");
-  const placeholder = document.getElementById("encOutputPlaceholder");
-  const badge = document.getElementById("encBadge");
-  const copyOutput = document.getElementById("encOutputCopy");
-  const clearOutput_ = document.getElementById("encOutputClear");
-  const downloadBtn = document.getElementById("encDownloadBtn");
-  const copyText_ = document.getElementById("encTextCopy");
-  const clearText = document.getElementById("encTextClear");
-  const copyKey = document.getElementById("encKeyCopy");
-
-  // Stored result for copy/download
-  let result = "";
-
-  /* Check whether the Encrypt button should be enabled.
-     Requires: some text (typed or file loaded) AND a key with letters. */
-  function updateBtn() {
-    const hasText = textarea.value.trim().length > 0 || fileState.text.length > 0;
-    const hasKey = keyInput.value.replace(/[^a-zA-Z]/g, "").length > 0;
-    encBtn.disabled = !(hasText && hasKey);
+  /* ── Reset output area ── */
+  function resetOutput() {
+    result = "";
+    outputBox.classList.remove("has-output");
+    // Clear text content but keep the placeholder element inside
+    while (outputBox.firstChild) outputBox.removeChild(outputBox.firstChild);
+    outputBox.appendChild(placeholder);
+    placeholder.hidden = false;
+    badge.hidden = true;
+    outCopy.disabled  = true;
+    outClear.disabled = true;
+    dlBtn.disabled    = true;
   }
 
-  // Wire up dropzone + file input + textarea clear-on-type
-  setupDropzone(dropzone, fileInput, textarea, fileState, updateBtn);
+  /* ── Events ── */
 
-  // Key input also triggers button check
-  keyInput.addEventListener("input", updateBtn);
+  // File input (click)
+  fileInput.addEventListener("change", function(e) {
+    loadFile(e.target.files[0]);
+  });
+
+  // Drag and drop
+  dropzone.addEventListener("dragover", function(e) {
+    e.preventDefault();
+    dropzone.classList.add("dropzone--over");
+  });
+  dropzone.addEventListener("dragleave", function() {
+    dropzone.classList.remove("dropzone--over");
+  });
+  dropzone.addEventListener("drop", function(e) {
+    e.preventDefault();
+    dropzone.classList.remove("dropzone--over");
+    loadFile(e.dataTransfer.files[0]);
+  });
+
+  // Typing in textarea clears any loaded file
+  textarea.addEventListener("input", function() {
+    fileContent = "";
+    refreshBtn();
+  });
+
+  // Key input
+  keyInput.addEventListener("input", refreshBtn);
 
   // Eye toggle
-  setupEyeToggle(eyeBtn, keyInput);
+  setupEye(eyeBtn, keyInput);
 
-  // Copy plaintext button
-  copyText_.addEventListener("click", () => copyText(fileState.text || textarea.value));
-
-  // Clear plaintext button
-  clearText.addEventListener("click", () => {
-    textarea.value = "";
-    fileState.text = "";
-    // Reset dropzone appearance
-    dropzone.classList.remove("dropzone--loaded");
-    dropzone.querySelector(".dropzone__label").textContent = "Drop a .txt file, or click to browse";
-    dropzone.querySelector(".dropzone__hint").textContent = ".txt only — stays in your browser";
-    updateBtn();
+  // Copy plaintext / ciphertext
+  txtCopy.addEventListener("click", function() {
+    copyText(fileContent || textarea.value);
   });
 
-  // Copy key button
-  copyKey.addEventListener("click", () => copyText(keyInput.value));
+  // Clear input
+  txtClear.addEventListener("click", function() {
+    textarea.value = "";
+    fileContent    = "";
+    dropzone.classList.remove("dropzone--loaded");
+    dropzone.querySelector(".dropzone__label").textContent = "Drop a .txt file, or click to browse";
+    dropzone.querySelector(".dropzone__hint").textContent  = ".txt only — stays in your browser";
+    // Reset the file input so the same file can be re-selected
+    fileInput.value = "";
+    refreshBtn();
+  });
 
-  // Encrypt button
-  encBtn.addEventListener("click", async () => {
-    const text = fileState.text || textarea.value;
-    const key = keyInput.value;
+  // Copy key
+  keyCopy.addEventListener("click", function() {
+    copyText(keyInput.value);
+  });
 
-    spinner.hidden = false;
-    encBtn.disabled = true;
+  // Main action button (Encrypt or Decrypt)
+  actionBtn.addEventListener("click", async function() {
+    const text = fileContent || textarea.value;
+    const key  = keyInput.value;
+
+    spinner.hidden  = false;
+    actionBtn.disabled = true;
 
     try {
-      result = await runCipher(text, key, "encrypt");
-      renderOutput(outputBox, placeholder, badge, result);
-      copyOutput.disabled = false;
-      clearOutput_.disabled = false;
-      downloadBtn.disabled = false;
-      showToast("Encrypted successfully.");
+      result = await runCipher(text, key, mode);
+
+      // Render output
+      placeholder.hidden = true;
+      outputBox.classList.add("has-output");
+      outputBox.textContent = result.length > 8000
+        ? result.slice(0, 8000) + "\n\n[preview truncated — download for full output]"
+        : result;
+
+      badge.hidden      = false;
+      outCopy.disabled  = false;
+      outClear.disabled = false;
+      dlBtn.disabled    = false;
+
+      showToast(mode === "encrypt" ? "Encrypted successfully." : "Decrypted successfully.");
     } catch (err) {
-      showToast(err.message || "Encryption failed.", true);
+      showToast(err.message || "Something went wrong.", true);
     } finally {
-      spinner.hidden = true;
-      updateBtn();
+      spinner.hidden = false;
+      refreshBtn();
     }
   });
 
-  // Copy output button
-  copyOutput.addEventListener("click", () => copyText(result));
+  // Copy output
+  outCopy.addEventListener("click", function() { copyText(result); });
 
-  // Clear output button
-  clearOutput_.addEventListener("click", () => {
-    result = "";
-    clearOutput(outputBox, placeholder, badge, [copyOutput, clearOutput_, downloadBtn]);
+  // Clear output
+  outClear.addEventListener("click", resetOutput);
+
+  // Download
+  dlBtn.addEventListener("click", function() {
+    downloadTxt(result, mode === "encrypt" ? "encrypted.txt" : "decrypted.txt");
   });
+}
 
-  // Download button
-  downloadBtn.addEventListener("click", () => downloadTxt(result, "encrypted.txt"));
-})();
+/* ─── Boot both panels ───────────────────────────────────────────── */
+buildPanel("enc", "encrypt");
+buildPanel("dec", "decrypt");
 
-
-/* ════════════════════════════════════════
-   DECRYPT PANEL
-════════════════════════════════════════ */
-(function setupDecryptPanel() {
-  const fileState = { text: "" };
-
-  const dropzone = document.getElementById("decDropzone");
-  const fileInput = document.getElementById("decFileInput");
-  const textarea = document.getElementById("decTextInput");
-  const keyInput = document.getElementById("decKeyInput");
-  const eyeBtn = document.getElementById("decEyeBtn");
-  const decBtn = document.getElementById("decBtn");
-  const spinner = document.getElementById("decSpinner");
-  const outputBox = document.getElementById("decOutputBox");
-  const placeholder = document.getElementById("decOutputPlaceholder");
-  const badge = document.getElementById("decBadge");
-  const copyOutput = document.getElementById("decOutputCopy");
-  const clearOutput_ = document.getElementById("decOutputClear");
-  const downloadBtn = document.getElementById("decDownloadBtn");
-  const copyText_ = document.getElementById("decTextCopy");
-  const clearText = document.getElementById("decTextClear");
-  const copyKey = document.getElementById("decKeyCopy");
-
-  let result = "";
-
-  function updateBtn() {
-    const hasText = textarea.value.trim().length > 0 || fileState.text.length > 0;
-    const hasKey = keyInput.value.replace(/[^a-zA-Z]/g, "").length > 0;
-    decBtn.disabled = !(hasText && hasKey);
-  }
-
-  setupDropzone(dropzone, fileInput, textarea, fileState, updateBtn);
-  keyInput.addEventListener("input", updateBtn);
-  setupEyeToggle(eyeBtn, keyInput);
-
-  copyText_.addEventListener("click", () => copyText(fileState.text || textarea.value));
-
-  clearText.addEventListener("click", () => {
-    textarea.value = "";
-    fileState.text = "";
-    dropzone.classList.remove("dropzone--loaded");
-    dropzone.querySelector(".dropzone__label").textContent = "Drop a .txt file, or click to browse";
-    dropzone.querySelector(".dropzone__hint").textContent = ".txt only — stays in your browser";
-    updateBtn();
-  });
-
-  copyKey.addEventListener("click", () => copyText(keyInput.value));
-
-  decBtn.addEventListener("click", async () => {
-    const text = fileState.text || textarea.value;
-    const key = keyInput.value;
-
-    spinner.hidden = false;
-    decBtn.disabled = true;
-
-    try {
-      result = await runCipher(text, key, "decrypt");
-      renderOutput(outputBox, placeholder, badge, result);
-      copyOutput.disabled = false;
-      clearOutput_.disabled = false;
-      downloadBtn.disabled = false;
-      showToast("Decrypted successfully.");
-    } catch (err) {
-      showToast(err.message || "Decryption failed.", true);
-    } finally {
-      spinner.hidden = true;
-      updateBtn();
-    }
-  });
-
-  copyOutput.addEventListener("click", () => copyText(result));
-
-  clearOutput_.addEventListener("click", () => {
-    result = "";
-    clearOutput(outputBox, placeholder, badge, [copyOutput, clearOutput_, downloadBtn]);
-  });
-
-  downloadBtn.addEventListener("click", () => downloadTxt(result, "decrypted.txt"));
-})();
-
-
-/* ════════════════════════════════════════
-   MODE SWITCHER (Encrypt & Save / Decrypt & Read tabs)
-════════════════════════════════════════ */
+/* ─── Mode switcher (Encrypt & Save / Decrypt & Read) ───────────── */
 const modeEncTab = document.getElementById("modeEncTab");
 const modeDecTab = document.getElementById("modeDecTab");
-const panelEnc = document.getElementById("panel-encrypt");
-const panelDec = document.getElementById("panel-decrypt");
+const panelEnc   = document.getElementById("panel-encrypt");
+const panelDec   = document.getElementById("panel-decrypt");
 
-modeEncTab.addEventListener("click", () => {
+modeEncTab.addEventListener("click", function() {
   modeEncTab.classList.add("mode-tab--active");
   modeDecTab.classList.remove("mode-tab--active");
   modeEncTab.setAttribute("aria-selected", "true");
@@ -355,7 +271,7 @@ modeEncTab.addEventListener("click", () => {
   panelDec.hidden = true;
 });
 
-modeDecTab.addEventListener("click", () => {
+modeDecTab.addEventListener("click", function() {
   modeDecTab.classList.add("mode-tab--active");
   modeEncTab.classList.remove("mode-tab--active");
   modeDecTab.setAttribute("aria-selected", "true");
@@ -364,20 +280,17 @@ modeDecTab.addEventListener("click", () => {
   panelEnc.hidden = true;
 });
 
-
-/* ════════════════════════════════════════
-   PAGE NAVIGATION (nav tabs + "Try it yourself" CTA)
-════════════════════════════════════════ */
+/* ─── Page navigation (nav tabs + CTA button) ───────────────────── */
 function switchPage(target) {
-  document.querySelectorAll(".nav-tab").forEach((t) => {
+  document.querySelectorAll(".nav-tab").forEach(function(t) {
     t.setAttribute("aria-selected", t.dataset.page === target);
   });
-  document.querySelectorAll(".page").forEach((p) => {
-    p.hidden = p.id !== `page-${target}`;
+  document.querySelectorAll(".page").forEach(function(p) {
+    p.hidden = p.id !== "page-" + target;
   });
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-document.querySelectorAll("[data-page]").forEach((btn) => {
-  btn.addEventListener("click", () => switchPage(btn.dataset.page));
+document.querySelectorAll("[data-page]").forEach(function(btn) {
+  btn.addEventListener("click", function() { switchPage(btn.dataset.page); });
 });
